@@ -89,6 +89,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 const router = useRouter()
 
@@ -109,23 +110,34 @@ const goBack = () => {
   router.push('/')
 }
 
-const createQueue = () => {
-  // Пока логируем просто
-  console.log({
-    queueName: queueName.value,
-    description: description.value,
-    startTime: startTime.value,
-    maxParticipants: maxParticipants.value,
-    hasPriority: hasPriority.value,
-    priorityCount: priorityCount.value,
-    initialPriority: initialPriority.value,
-    anonymousChat: anonymousChat.value,
-    systemNotifications: systemNotifications.value,
-    swapPositions: swapPositions.value,
-    admins: admins.value
-  })
-  
-  router.push('/queue') // просто переход на страницу очереди
+const createQueue = async () => {
+  try {
+    const payload = { // Объект с данными
+      queueName: queueName.value,
+      description: description.value,
+      startTime: startTime.value,
+      maxParticipants: parseInt(maxParticipants.value) || 0,
+      hasPriority: hasPriority.value,
+      priorityCount: parseInt(priorityCount.value) || 0,
+      initialPriority: parseInt(initialPriority.value) || 0,
+      anonymousChat: anonymousChat.value,
+      systemNotifications: systemNotifications.value,
+      swapPositions: swapPositions.value,
+      admins: admins.value
+    }
+
+    // Отправляем Post запрос
+    const response = await axios.post('http://localhost:8080/api/queues', payload)
+    const { link } = response.data
+
+    // Показываем ссылку пользователю через alert
+    alert(`Очередь создана!\nСсылка для вступления: ${link}`)
+
+    // Переходим на страницу очереди
+    router.push(`/queue/${response.data.id}`)
+  } catch (error) {
+    alert('Не удалось создать очередь')
+  }
 }
 
 </script>
