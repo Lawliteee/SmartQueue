@@ -1,6 +1,8 @@
 <template>
   <header>
-    <img class="logo" src="/logo.svg" alt="SQ logo" />
+    <router-link to="/" class="logo-link">
+      <img class="logo" src="/logo.svg" alt="SQ logo" />
+    </router-link>
     <span class="header-title">Smart Queue</span>
     <nav class="header-nav">
       <a href="#">Войти</a>
@@ -18,12 +20,19 @@ header {
   padding: 0 32px;
   height: 70px;
 }
+
+.logo-link {
+  display: block;
+  line-height: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
 .logo {
   height: 50px;
   width: auto;
-  display: block;
-  z-index: 1;
 }
+
 .header-title {
   font-size: 25px;
   font-weight: 800;
