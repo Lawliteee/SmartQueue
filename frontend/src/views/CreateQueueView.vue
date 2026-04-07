@@ -1,0 +1,379 @@
+<template>
+  <main>
+    <h1>Создание очереди</h1>
+
+    <section class="form-panel">
+      <div class="form-row first-row">
+        <span class="form-label">Название очереди</span>
+        <div class="form-control">
+          <input type="text" class="form-input" placeholder="" v-model="queueName" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <span class="form-label">Описание</span>
+        <div class="form-control">
+          <textarea class="form-input form-textarea" v-model="description"></textarea>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="inline-fields">
+          <div class="inline-field">
+            <label class="inline-label">Время начала</label>
+            <input type="time" class="form-input select-sm" v-model="startTime" />
+          </div>
+          <div class="inline-field">
+            <label class="inline-label">Макс. участников</label>
+            <input type="text" class="form-input input-sm" v-model="maxParticipants" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="priority-row disabled">
+          <label class="checkbox-item">
+            <input type="checkbox" v-model="hasPriority" />
+            <span>Приоритеты</span>
+          </label>
+          <label class="inline-label ml">Количество приоритетов</label>
+          <input type="text" class="form-input input-sm" v-model="priorityCount" />
+          <label class="inline-label ml">Начальный приоритет</label>
+          <input type="text" class="form-input input-sm" v-model="initialPriority" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="checkbox-row">
+          <label class="checkbox-item">
+            <input type="checkbox" v-model="anonymousChat" />
+            <span>Анонимный чат</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" v-model="systemNotifications" />
+            <span>Системные уведомления</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" v-model="swapPositions" />
+            <span>Обмен позициями</span>
+          </label>
+          <span class="info-icon" title="Участники могут меняться местами в очереди">i</span>
+        </div>
+      </div>
+
+      <div class="form-row disabled">
+        <span class="form-label">Администраторы</span>
+        <div class="form-control">
+          <div class="admin-row">
+            <input type="text" class="form-input" placeholder="Добавьте администраторов..." v-model="adminInput" @keyup.enter="addAdmin" />
+            <button class="btn-add" @click="addAdmin">+</button>
+          </div>
+          <div v-if="admins.length > 0" class="admin-list">
+            <span v-for="(admin, idx) in admins" :key="idx" class="admin-tag"> {{ admin }}
+              <button @click="removeAdmin(idx)" class="remove-admin">&times;</button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="actions">
+      <button class="btn-back" @click="goBack">Назад</button>
+      <button class="btn-create" @click="createQueue">Создать</button>
+    </section>
+  </main>
+</template>
+
+
+
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const queueName = ref('')
+const description = ref('')
+const startTime = ref('12:00')
+const maxParticipants = ref('')
+const hasPriority = ref(false)
+const priorityCount = ref('')
+const initialPriority = ref('')
+const anonymousChat = ref(false)
+const systemNotifications = ref(false)
+const swapPositions = ref(false)
+const adminInput = ref('')
+const admins = ref([])
+
+const goBack = () => {
+  router.push('/')
+}
+
+const createQueue = () => {
+  // Пока логируем просто
+  console.log({
+    queueName: queueName.value,
+    description: description.value,
+    startTime: startTime.value,
+    maxParticipants: maxParticipants.value,
+    hasPriority: hasPriority.value,
+    priorityCount: priorityCount.value,
+    initialPriority: initialPriority.value,
+    anonymousChat: anonymousChat.value,
+    systemNotifications: systemNotifications.value,
+    swapPositions: swapPositions.value,
+    admins: admins.value
+  })
+  
+  router.push('/queue') // просто переход на страницу очереди
+}
+
+</script>
+
+
+
+<style scoped>
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 20px 60px;
+}
+
+h1 {
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--text);
+  text-align: center;
+  max-width: 700px;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.form-panel {
+  background: var(--panel);
+  border-radius: 18px;
+  padding: 6px 32px;
+  width: 100%;
+  max-width: 700px;
+}
+
+.form-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px 0;
+  border-top: 1px solid var(--divider);
+}
+
+.form-row.first-row {
+  border-top: none;
+}
+
+.form-label {
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--text);
+  min-width: 170px;
+  padding-top: 9px;
+  flex-shrink: 0;
+}
+
+.form-control {
+  flex: 1;
+}
+
+.form-input {
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 14px;
+  background: var(--input-bg);
+  border: none;
+  border-radius: 8px;
+  padding: 9px 14px;
+  width: 100%;
+  color: var(--text);
+  outline: none;
+  transition: box-shadow 0.15s;
+}
+
+.form-input:focus {
+  box-shadow: 0 0 0 2px var(--teal);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.inline-fields {
+  display: flex;
+  gap: 32px;
+  flex: 1;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.inline-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.inline-label {
+  font-size: 14px;
+  font-weight: 400;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.select-sm {
+  width: auto;
+  cursor: pointer;
+  padding: 9px 10px;
+}
+
+.input-sm {
+  width: 70px;
+}
+
+.ml {
+  margin-left: 16px;
+}
+
+.priority-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  color: var(--text);
+}
+
+input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--teal-dark);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.info-icon {
+  display: inline-flex;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-muted);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  user-select: none;
+}
+
+.admin-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-row .form-input {
+  flex: 1;
+}
+
+.btn-add {
+  background: var(--input-bg);
+  border: 1px solid var(--divider);
+  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  font-family: 'Fira Sans', sans-serif;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.btn-add:hover {
+  background: #f0f0f0;
+}
+
+.admin-list {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 28px;
+  width: 100%;
+  max-width: 700px;
+  justify-content: center;
+}
+
+.btn-back {
+  background: var(--panel);
+  color: var(--text);
+  border: none;
+  border-radius: 10px;
+  padding: 14px 40px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  transition: background 0.15s;
+}
+
+.btn-back:hover {
+  background: #cfcfcf;
+}
+
+.btn-create {
+  background: var(--teal-dark);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 14px 60px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  transition: background 0.15s;
+}
+
+.btn-create:hover {
+  background: var(--teal);
+}
+
+.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+</style>

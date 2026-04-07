@@ -16,6 +16,9 @@
   --text-muted: #888;
   --bg: #fff;
   --divider: #d0d0d0;
+  --panel: #e0e0e0;
+  --input-bg: #ffffff;
+  --number-bg: #e4e4e4;
 }
 
 body {
