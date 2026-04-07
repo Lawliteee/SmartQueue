@@ -19,6 +19,11 @@ header {
   justify-content: space-between;
   padding: 0 32px;
   height: 70px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
 }
 
 .logo-link {

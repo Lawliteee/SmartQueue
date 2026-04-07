@@ -14,5 +14,6 @@ import AppHeader from './components/AppHeader.vue'
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  padding-top: 50px; 
 }
 </style>
