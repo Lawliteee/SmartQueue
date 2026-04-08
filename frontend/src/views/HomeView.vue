@@ -44,7 +44,11 @@ function openModal() {
 
 function submitQueue() {
   if (queueLink.value.trim()) {
-    window.location.href = queueLink.value.trim()
+    const url = queueLink.value.trim()
+    const parts = url.split('/')
+    const queueId = parts[parts.length - 1] // Извлекаем последний элемент
+    router.push(`/queue/${queueId}`)
+    modalOpen.value = false
   }
 }
 </script>

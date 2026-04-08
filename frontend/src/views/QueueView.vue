@@ -14,13 +14,31 @@
 
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import axios from 'axios'
 
+const route = useRoute()
 const router = useRouter()
-const queueTitle = ref('Тестовая очередь')
+
+const queueTitle = ref('')
 const waitTime = ref(0)
 const peopleAhead = ref(0)
+
+onMounted(async () => {
+  const queueId = route.params.id
+  try {
+    const response = await axios.get(`http://localhost:8080/api/queues/${queueId}`)
+    const data = response.data
+    queueTitle.value = data.name
+    
+    waitTime.value = data.waitTime || 0
+    peopleAhead.value = data.peopleAhead || 0
+  } catch (error) {
+    alert('Очередь не найдена')
+    router.push('/')
+  }
+})
 
 const leaveQueue = () => {
   router.push('/')
