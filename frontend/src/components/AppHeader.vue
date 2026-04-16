@@ -1,7 +1,7 @@
 <template>
   <header>
     <router-link to="/" class="logo-link">
-      <img class="logo" src="/logo.svg" alt="SQ logo" />
+      <img class="logo" src="/logo.png" alt="SQ logo" />
     </router-link>
     <span class="header-title">Smart Queue</span>
     <nav class="header-nav">
