@@ -20,9 +20,14 @@
 
   <div class="modal" v-if="modalOpen" @click.self="modalOpen = false">
     <div class="modal-content">
-      <h3>Введите ссылку на очередь:</h3>
-      <input v-model="queueLink" type="text" class="modal-input" />
-      <button class="modal-btn" @click="submitQueue">Вступить</button>
+      <h3>Вступить в очередь</h3>
+      <div class="input-group">
+        <input v-model="userName"  type="text" class="modal-input" placeholder="Ваше имя" />
+        <input v-model="queueLink" type="text" class="modal-input" placeholder="Ссылка на очередь" />
+      </div>
+      <button class="modal-btn":disabled="!canSubmit":class="{ 'modal-btn--disabled': !canSubmit }" @click="submitQueue">
+        Вступить
+      </button>
     </div>
   </div>
 </template>
@@ -30,26 +35,36 @@
 
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 const router = useRouter()
 
-const modalOpen = ref(false) // Открыто ли окно
-const queueLink = ref('')    // Ссылка, котору. ввел пользователь
+const userName  = ref('')
+const modalOpen = ref(false)
+const queueLink = ref('')
+
+const canSubmit = computed(() =>
+  userName.value.trim() !== '' && queueLink.value.trim() !== ''
+)
 
 function openModal() {
   modalOpen.value = true
 }
 
-function submitQueue() {
-  if (queueLink.value.trim()) {
-    const url = queueLink.value.trim()
-    const parts = url.split('/')
-    const queueId = parts[parts.length - 1] // Извлекаем последний элемент
-    router.push(`/queue/${queueId}`)
-    modalOpen.value = false
-  }
+async function submitQueue() {
+  if (!canSubmit.value) return
+
+  const url = queueLink.value.trim()
+  const parts = url.split('/')
+  const queueId = parts[parts.length - 1]
+
+  // TODO
+  // await axios.post(`/api/queues/${queueId}/join`, { name: userName.value.trim() })
+
+  router.push(`/queue/${queueId}`)
+  modalOpen.value = false
 }
 </script>
 
@@ -132,6 +147,7 @@ h1 {
   background: var(--teal);
 }
 
+/* Модальное окно */
 .modal {
   position: fixed;
   top: 0;
@@ -149,8 +165,10 @@ h1 {
   background: white;
   padding: 35px;
   border-radius: 18px;
+  width: 100%;
   max-width: 400px;
   text-align: center;
+  box-sizing: border-box;
 }
 
 .modal-content h3 {
@@ -160,19 +178,30 @@ h1 {
   color: var(--text);
 }
 
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
 .modal-input {
   width: 100%;
   padding: 14px;
-  margin-bottom: 30px;
-  border: 1px solid var(--divider);
-  border-color: var(--teal);
+  border: 1px solid var(--teal);
   border-radius: 12px;
   font-family: 'Fira Sans', sans-serif;
   font-size: 15px;
+  color: var(--text);
+  box-sizing: border-box;
+  transition: border-color 0.18s;
 }
+
+.modal-input::placeholder { color: #aaa; }
 
 .modal-input:focus {
   outline: none;
+  border-color: var(--teal-dark);
 }
 
 .modal-btn {
@@ -185,9 +214,16 @@ h1 {
   font-weight: 700;
   width: 60%;
   font-family: 'Fira Sans', sans-serif;
+  cursor: pointer;
+  transition: background 0.18s, opacity 0.18s;
 }
 
-.modal-btn:hover {
+.modal-btn:hover:not(.modal-btn--disabled) {
   background: var(--teal);
+}
+
+.modal-btn--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 </style>
