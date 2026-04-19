@@ -131,9 +131,9 @@ const createQueue = async () => {
     const { link } = response.data
 
     // Показываем ссылку пользователю через alert
-    alert(`Очередь создана!\nСсылка для вступления: ${link}`)
+    alert(`Очередь создана!\nИдентификатор для участников: ${response.data.id}`)
 
-    // Переходим на страницу администратора
+    // Переходим на страницу очереди
     router.push(`/admin/${response.data.id}`)
   } catch (error) {
     alert('Не удалось создать очередь')

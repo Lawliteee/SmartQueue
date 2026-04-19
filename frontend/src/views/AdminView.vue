@@ -5,6 +5,9 @@
     <div class="queue-bar">
       <span class="queue-name">{{ queue.name }}</span>
       <span class="queue-time">начало: {{ queue.startTime }}</span>
+      <button class="btn-copy" :class="{ 'btn-copy--copied': copied }" @click="copyId">
+        {{ copied ? 'Скопировано' : 'Скопировать ID' }}
+      </button>
     </div>
 
     <!-- Текущий участник -->
@@ -89,6 +92,15 @@ onMounted(async () => {
   }
 })
 
+const copied = ref(false) 
+function copyId() {
+  if (queue.value.id) {
+    navigator.clipboard.writeText(queue.value.id)
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 2000)
+  }
+}
+
 function callNext() {
   // TODO: POST
   queue.value.currentNumber++
@@ -101,6 +113,7 @@ function finishQueue() {
   // TODO: POST
   router.push('/')
 }
+
 </script>
 
 <style scoped>
@@ -138,6 +151,30 @@ function finishQueue() {
   font-weight: 400;
   color: var(--text-muted);
 }
+
+.btn-copy {
+  margin-left: auto;
+  background: var(--panel);
+  color: var(--text);
+  border: none;
+  border-radius: 10px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  transition: background 0.20s, color 0.20s;
+  white-space: nowrap;
+}
+ 
+.btn-copy:hover { background: #cfcfcf; }
+ 
+.btn-copy--copied {
+  background: var(--teal-dark);
+  color: white;
+}
+ 
+.btn-copy--copied:hover { background: var(--teal); }
 
 .current-block {
   display: flex;

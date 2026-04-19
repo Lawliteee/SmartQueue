@@ -18,15 +18,21 @@
     </section>
   </main>
 
-  <div class="modal" v-if="modalOpen" @click.self="modalOpen = false">
+  <div class="modal" v-if="modalOpen" @click.self="closeModal">
     <div class="modal-content">
       <h3>Вступить в очередь</h3>
       <div class="input-group">
         <input v-model="userName"  type="text" class="modal-input" placeholder="Ваше имя" />
-        <input v-model="queueLink" type="text" class="modal-input" placeholder="Ссылка на очередь" />
+        <input v-model="queueId"   type="text" class="modal-input" placeholder="Идентификатор очереди" />
       </div>
-      <button class="modal-btn":disabled="!canSubmit":class="{ 'modal-btn--disabled': !canSubmit }" @click="submitQueue">
-        Вступить
+      <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
+      <button
+        class="modal-btn"
+        :disabled="!canSubmit || loading"
+        :class="{ 'modal-btn--disabled': !canSubmit || loading }"
+        @click="submitQueue"
+      >
+        {{ loading ? 'Подождите...' : 'Вступить' }}
       </button>
     </div>
   </div>
@@ -43,28 +49,49 @@ const router = useRouter()
 
 const userName  = ref('')
 const modalOpen = ref(false)
-const queueLink = ref('')
+const queueId   = ref('')
+const loading   = ref(false)
+const errorMsg  = ref('')
 
 const canSubmit = computed(() =>
-  userName.value.trim() !== '' && queueLink.value.trim() !== ''
+  userName.value.trim() !== '' && queueId.value.trim() !== ''
 )
 
 function openModal() {
   modalOpen.value = true
+  errorMsg.value  = ''
+}
+
+function closeModal() {
+  modalOpen.value = false
+  userName.value  = ''
+  queueId.value   = ''
+  errorMsg.value  = ''
 }
 
 async function submitQueue() {
-  if (!canSubmit.value) return
+  if (!canSubmit.value || loading.value) return
 
-  const url = queueLink.value.trim()
-  const parts = url.split('/')
-  const queueId = parts[parts.length - 1]
+  // Если вставили полную ссылку - извлекаем ID
+  const raw = queueId.value.trim()
+  const id  = raw.includes('/') ? raw.split('/').filter(Boolean).pop() : raw
 
-  // TODO
-  // await axios.post(`/api/queues/${queueId}/join`, { name: userName.value.trim() })
+  loading.value  = true
+  errorMsg.value = ''
 
-  router.push(`/queue/${queueId}`)
-  modalOpen.value = false
+  try {
+    await axios.post(`http://localhost:8080/api/queues/${id}/join`, {
+      name: userName.value.trim(),
+    })
+    router.push(`/queue/${id}`)
+    modalOpen.value = false
+  } catch (err) {
+    errorMsg.value = err.response?.status === 404
+      ? 'Очередь не найдена. Проверьте идентификатор.'
+      : 'Не удалось вступить в очередь.'
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -143,9 +170,7 @@ h1 {
   padding: 14px 40px;
 }
 
-.btn-primary1:hover, .btn-primary2:hover {
-  background: var(--teal);
-}
+.btn-primary1:hover, .btn-primary2:hover { background: var(--teal); }
 
 /* Модальное окно */
 .modal {
@@ -202,6 +227,12 @@ h1 {
 .modal-input:focus {
   outline: none;
   border-color: var(--teal-dark);
+}
+
+.error-msg {
+  font-size: 13px;
+  color: #e05252;
+  margin-bottom: 14px;
 }
 
 .modal-btn {

@@ -25,7 +25,6 @@ func (h *Handler) CreateQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Генерируем уникальный ID
 	id := uuid.New().String()
 
 	queue := &Queue{
@@ -42,13 +41,14 @@ func (h *Handler) CreateQueue(w http.ResponseWriter, r *http.Request) {
 		SwapPositions:       req.SwapPositions,
 		Admins:              req.Admins,
 		CreatedAt:           time.Now(),
-		Participants:        []string{},
+		Participants:        []Participant{},
+		CurrentNumber:       0,
+		Finished:            false,
 	}
 
 	h.store.Save(queue)
 
-	// Формируем ссылку
-	link := "http://localhost:5173/queue/" + id // или твой порт фронта
+	link := "http://localhost:5173/queue/" + id
 
 	resp := QueueResponse{
 		ID:   id,
@@ -60,11 +60,10 @@ func (h *Handler) CreateQueue(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(resp)
 
-	// Логируем ссылку в консоль
 	println("Новая очередь создана:", link)
 }
 
-// GET /api/queues/{id} – получение информации об очереди
+// GET /api/queues/{id} – получение информации об очереди (для участника и админа)
 func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -75,20 +74,118 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Для фронта отдаём только нужные поля
 	type QueueInfo struct {
-		Name         string `json:"name"`
-		Participants int    `json:"participants"` // пока 0, потом добавим логику
-		WaitTime     int    `json:"waitTime"`     // можно вычислять
-		PeopleAhead  int    `json:"peopleAhead"`
+		ID            string        `json:"id"`
+		Name          string        `json:"name"`
+		StartTime     string        `json:"startTime"`
+		CurrentNumber int           `json:"currentNumber"`
+		Participants  []Participant `json:"participants"`
+		PeopleAhead   int           `json:"peopleAhead"`
+		WaitTime      int           `json:"waitTime"`
+		Finished      bool          `json:"finished"`
 	}
+
 	info := QueueInfo{
-		Name:         queue.Name,
-		Participants: len(queue.Participants),
-		WaitTime:     0,
-		PeopleAhead:  0,
+		ID:            queue.ID,
+		Name:          queue.Name,
+		StartTime:     queue.StartTime,
+		CurrentNumber: queue.CurrentNumber,
+		Participants:  queue.Participants,
+		PeopleAhead:   len(queue.Participants),
+		WaitTime:      len(queue.Participants) * 5, // заглушка: 5 мин на человека
+		Finished:      queue.Finished,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(info)
+}
+
+// POST /api/queues/{id}/join – вступление в очередь
+func (h *Handler) JoinQueue(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	queue, ok := h.store.Get(id)
+	if !ok {
+		http.Error(w, "Queue not found", http.StatusNotFound)
+		return
+	}
+
+	var req JoinQueueRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Name == "" {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	participant := Participant{
+		ID:       uuid.New().String(),
+		Name:     req.Name,
+		Priority: 0,
+	}
+
+	h.store.AddParticipant(id, participant)
+
+	type JoinResponse struct {
+		ParticipantID string `json:"participantId"`
+		Position      int    `json:"position"`
+	}
+
+	// Получаем актуальное состояние очереди для позиции
+	queue, _ = h.store.Get(id)
+	position := len(queue.Participants)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(JoinResponse{
+		ParticipantID: participant.ID,
+		Position:      position,
+	})
+}
+
+// POST /api/admin/queues/{id}/next – вызвать следующего участника
+func (h *Handler) CallNext(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	queue, ok := h.store.Get(id)
+	if !ok {
+		http.Error(w, "Queue not found", http.StatusNotFound)
+		return
+	}
+
+	if len(queue.Participants) == 0 {
+		http.Error(w, "No participants", http.StatusBadRequest)
+		return
+	}
+
+	// Удаляем первого участника и увеличиваем счётчик
+	h.store.ShiftParticipant(id)
+
+	queue, _ = h.store.Get(id)
+
+	type NextResponse struct {
+		CurrentNumber int           `json:"currentNumber"`
+		Participants  []Participant `json:"participants"`
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(NextResponse{
+		CurrentNumber: queue.CurrentNumber,
+		Participants:  queue.Participants,
+	})
+}
+
+// POST /api/admin/queues/{id}/finish – завершить очередь
+func (h *Handler) FinishQueue(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	_, ok := h.store.Get(id)
+	if !ok {
+		http.Error(w, "Queue not found", http.StatusNotFound)
+		return
+	}
+
+	h.store.FinishQueue(id)
+
+	w.WriteHeader(http.StatusOK)
 }
