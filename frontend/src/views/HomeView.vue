@@ -8,7 +8,7 @@
       <div class="role-cards">
         <div class="role-card">
           <span class="role-label">Участник</span>
-          <button class="btn-primary1" @click="openModal">Вступить в очередь</button>
+          <button class="btn-primary1" @click="modalOpen = true">Вступить в очередь</button>
         </div>
         <div class="role-card">
           <span class="role-label">Организатор</span>
@@ -18,81 +18,18 @@
     </section>
   </main>
 
-  <div class="modal" v-if="modalOpen" @click.self="closeModal">
-    <div class="modal-content">
-      <h3>Вступить в очередь</h3>
-      <div class="input-group">
-        <input v-model="userName"  type="text" class="modal-input" placeholder="Ваше имя" />
-        <input v-model="queueId"   type="text" class="modal-input" placeholder="Идентификатор очереди" />
-      </div>
-      <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
-      <button
-        class="modal-btn"
-        :disabled="!canSubmit || loading"
-        :class="{ 'modal-btn--disabled': !canSubmit || loading }"
-        @click="submitQueue"
-      >
-        {{ loading ? 'Подождите...' : 'Вступить' }}
-      </button>
-    </div>
-  </div>
+  <JoinQueueModal v-if="modalOpen" @close="modalOpen = false" />
 </template>
 
 
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import JoinQueueModal from '../components/JoinModal.vue'
 
 const router = useRouter()
-
-const userName  = ref('')
 const modalOpen = ref(false)
-const queueId   = ref('')
-const loading   = ref(false)
-const errorMsg  = ref('')
-
-const canSubmit = computed(() =>
-  userName.value.trim() !== '' && queueId.value.trim() !== ''
-)
-
-function openModal() {
-  modalOpen.value = true
-  errorMsg.value  = ''
-}
-
-function closeModal() {
-  modalOpen.value = false
-  userName.value  = ''
-  queueId.value   = ''
-  errorMsg.value  = ''
-}
-
-async function submitQueue() {
-  if (!canSubmit.value || loading.value) return
-
-  // Если вставили полную ссылку - извлекаем ID
-  const raw = queueId.value.trim()
-  const id  = raw.includes('/') ? raw.split('/').filter(Boolean).pop() : raw
-
-  loading.value  = true
-  errorMsg.value = ''
-
-  try {
-    await axios.post(`http://localhost:8080/api/queues/${id}/join`, {
-      name: userName.value.trim(),
-    })
-    router.push(`/queue/${id}`)
-    modalOpen.value = false
-  } catch (err) {
-    errorMsg.value = err.response?.status === 404
-      ? 'Очередь не найдена. Проверьте идентификатор.'
-      : 'Не удалось вступить в очередь.'
-  } finally {
-    loading.value = false
-  }
-}
 </script>
 
 <style scoped>
@@ -171,90 +108,4 @@ h1 {
 }
 
 .btn-primary1:hover, .btn-primary2:hover { background: var(--teal); }
-
-/* Модальное окно */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-}
-
-.modal-content {
-  background: white;
-  padding: 35px;
-  border-radius: 18px;
-  width: 100%;
-  max-width: 400px;
-  text-align: center;
-  box-sizing: border-box;
-}
-
-.modal-content h3 {
-  font-size: 21px;
-  font-weight: 400;
-  margin-bottom: 18px;
-  color: var(--text);
-}
-
-.input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 28px;
-}
-
-.modal-input {
-  width: 100%;
-  padding: 14px;
-  border: 1px solid var(--teal);
-  border-radius: 12px;
-  font-family: 'Fira Sans', sans-serif;
-  font-size: 15px;
-  color: var(--text);
-  box-sizing: border-box;
-  transition: border-color 0.18s;
-}
-
-.modal-input::placeholder { color: #aaa; }
-
-.modal-input:focus {
-  outline: none;
-  border-color: var(--teal-dark);
-}
-
-.error-msg {
-  font-size: 13px;
-  color: #e05252;
-  margin-bottom: 14px;
-}
-
-.modal-btn {
-  background: var(--teal-dark);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  padding: 14px 20px;
-  font-size: 16px;
-  font-weight: 700;
-  width: 60%;
-  font-family: 'Fira Sans', sans-serif;
-  cursor: pointer;
-  transition: background 0.18s, opacity 0.18s;
-}
-
-.modal-btn:hover:not(.modal-btn--disabled) {
-  background: var(--teal);
-}
-
-.modal-btn--disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
 </style>
