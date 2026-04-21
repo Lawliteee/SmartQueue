@@ -44,8 +44,8 @@ async function fetchQueue() {
   try {
     const response = await axios.get(`http://localhost:8080/api/queues/${queueId}`)
     const data = response.data
-    queueTitle.value  = data.name
-    waitTime.value    = data.waitTime    || 0
+    queueTitle.value = data.name
+    waitTime.value = data.waitTime    || 0
     peopleAhead.value = data.peopleAhead || 0
   } catch (error) {
     clearInterval(pollTimer)
@@ -54,7 +54,13 @@ async function fetchQueue() {
   }
 }
 
-const leaveQueue = () => {
+async function leaveQueue() {
+  const participantId = sessionStorage.getItem('participantId')
+  const queueId = route.params.id
+  if (participantId) {
+    await axios.delete(`http://localhost:8080/api/queues/${queueId}/participants/${participantId}`)
+    sessionStorage.removeItem('participantId')
+  }
   router.push('/')
 }
 
