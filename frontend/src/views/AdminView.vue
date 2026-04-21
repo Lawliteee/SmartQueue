@@ -107,12 +107,10 @@ function copyId() {
   }
 }
 
-function callNext() {
-  // TODO: POST
-  queue.value.currentNumber++
-  if (queue.value.participants.length > 0) {
-    queue.value.participants.shift()
-  }
+async function callNext() {
+  const response = await axios.post(`http://localhost:8080/api/admin/queues/${route.params.id}/next`)
+  queue.value.currentNumber = response.data.currentNumber
+  queue.value.participants  = response.data.participants
 }
 
 async function finishQueue() {
