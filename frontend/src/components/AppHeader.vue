@@ -5,8 +5,8 @@
     </router-link>
     <span class="header-title">Smart Queue</span>
     <nav class="header-nav">
-      <a href="#" @click.prevent="openLogin">Войти</a>
-      <a href="#" @click.prevent="openRegister">Зарегистрироваться</a>
+      <a href="#" @click="openLogin">Войти</a>
+      <a href="#" @click="openRegister">Зарегистрироваться</a>
     </nav>
   </header>
 
@@ -31,21 +31,25 @@ import RegisterModal from './RegisterModal.vue'
 const loginOpen = ref(false)
 const registerOpen = ref(false)
  
+// Открываем модальное окно Логина
 function openLogin() {
   loginOpen.value = true
   registerOpen.value = false
-}
- 
+} 
+
+// Открываем модальное окно Регистрации
 function openRegister() {
   registerOpen.value = true
   loginOpen.value = false
 }
  
+// Переключаемся с Логина на Регистрацию
 function switchToRegister() {
   loginOpen.value = false
   registerOpen.value = true
 }
- 
+
+// Переключаемся с Регистрации на Логин
 function switchToLogin() {
   registerOpen.value = false
   loginOpen.value = true

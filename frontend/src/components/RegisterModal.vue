@@ -16,8 +16,7 @@
       </label>
       <button class="modal-btn">Зарегистрироваться</button>
 
-      <p class="switch-text">
-        Уже есть аккаунт?
+      <p class="switch-text">Уже есть аккаунт?
         <a href="#" @click.prevent="$emit('switch-to-login')">Войти</a>
       </p>
     </div>
@@ -69,9 +68,9 @@ const agreed = ref(false)
   color: var(--text-muted);
   cursor: pointer;
   line-height: 1;
-  padding: 2px 6px;
+  padding: 6px 6px 4px 6px;
   border-radius: 6px;
-  transition: background 0.15s;
+  transition: background 0.20s;
 }
 
 .modal-close:hover {
@@ -145,7 +144,7 @@ h3 {
   width: 80%;
   font-family: 'Fira Sans', sans-serif;
   cursor: pointer;
-  transition: background 0.18s;
+  transition: background 0.20s;
 }
 
 .modal-btn:hover {

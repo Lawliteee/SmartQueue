@@ -13,8 +13,7 @@
 
       <p class="hint">Если вы не помните пароль, то ничем не можем помочь</p>
 
-      <p class="switch-text">
-        Нет аккаунта?
+      <p class="switch-text">Нет аккаунта?
         <a href="#" @click.prevent="$emit('switch-to-register')">Зарегистрироваться</a>
       </p>
     </div>
@@ -64,9 +63,9 @@ const password = ref('')
   color: var(--text-muted);
   cursor: pointer;
   line-height: 1;
-  padding: 2px 6px;
+  padding: 6px 6px 4px 6px;
   border-radius: 6px;
-  transition: background 0.15s;
+  transition: background 0.20s;
 }
 
 .modal-close:hover {
