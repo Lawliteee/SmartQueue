@@ -25,6 +25,7 @@ func main() {
 	api.HandleFunc("/queues", handler.CreateQueue).Methods("POST")
 	api.HandleFunc("/queues/{id}", handler.GetQueue).Methods("GET")
 	api.HandleFunc("/queues/{id}/join", handler.JoinQueue).Methods("POST")
+	api.HandleFunc("/queues/{id}/participants/{participantId}", handler.LeaveQueue).Methods("DELETE")
 
 	// Админ
 	api.HandleFunc("/admin/queues/{id}/next", handler.CallNext).Methods("POST")
@@ -32,7 +33,7 @@ func main() {
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5173"},
-		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedMethods: []string{"GET", "POST", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type"},
 		AllowCredentials: true,
 	})

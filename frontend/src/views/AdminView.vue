@@ -6,12 +6,12 @@
       <span class="queue-name">{{ queue.name }}</span>
       <span class="queue-time">начало: {{ queue.startTime }}</span>
       <button class="btn-copy" :class="{ 'btn-copy--copied': copied }" @click="copyId">
-        {{ copied ? 'Скопировано' : 'Скопировать ID' }}
+        <span class="btn-text">{{ copied ? 'Скопировано' : 'Скопировать ID' }}</span>
       </button>
     </div>
 
     <!-- Текущий участник -->
-    <div class="current-block">
+    <div class="current-block" v-if="queue.currentNumber !== null">
       <div class="current-label">
         <span class="current-text">Текущий участник:</span>
         <span class="current-number">#{{ queue.currentNumber }}</span>
@@ -49,9 +49,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
+
+let pollTimer = null
 
 const route = useRoute()
 const router = useRouter()
@@ -64,53 +66,51 @@ const queue = ref({
   participants: []
 })
 
-const currentParticipant = computed(() => {
-  // Текущий участник - первый в списке
-  if (queue.value.participants && queue.value.participants.length > 0) {
-    return queue.value.participants[0]
-  }
-  return null
-})
+const currentParticipant = computed(() => queue.value.currentParticipant ?? null)
 
 onMounted(async () => {
+  await fetchQueue()
+  pollTimer = setInterval(fetchQueue, 3000)
+})
+
+onUnmounted(() => clearInterval(pollTimer))
+
+async function fetchQueue() {
   const queueId = route.params.id
   try {
     const response = await axios.get(`http://localhost:8080/api/queues/${queueId}`)
     const data = response.data
-    
     queue.value = {
       id: data.id,
       name: data.name,
       startTime: data.startTime || '12:00',
-      currentNumber: data.currentNumber || 1,
-      participants: data.participants || []
+      currentNumber: data.currentNumber ?? null,
+      participants: data.participants || [],
+      currentParticipant: data.currentParticipant || null,
     }
   } catch (error) {
-    console.error('Ошибка загрузки очереди:', error)
-    alert('Очередь не найдена')
-    router.push('/')
+    console.error('Ошибка загрузки:', error)
   }
-})
+}
 
 const copied = ref(false) 
 function copyId() {
   if (queue.value.id) {
     navigator.clipboard.writeText(queue.value.id)
     copied.value = true
-    setTimeout(() => { copied.value = false }, 2000)
+    setTimeout(() => { copied.value = false }, 1000)
   }
 }
 
-function callNext() {
-  // TODO: POST
-  queue.value.currentNumber++
-  if (queue.value.participants.length > 0) {
-    queue.value.participants.shift()
-  }
+async function callNext() {
+  const response = await axios.post(`http://localhost:8080/api/admin/queues/${route.params.id}/next`)
+  queue.value.currentNumber = response.data.currentNumber
+  queue.value.participants  = response.data.participants
+  queue.value.currentParticipant = response.data.currentParticipant ?? null
 }
 
-function finishQueue() {
-  // TODO: POST
+async function finishQueue() {
+  await axios.post(`http://localhost:8080/api/admin/queues/${route.params.id}/finish`)
   router.push('/')
 }
 
@@ -163,18 +163,28 @@ function finishQueue() {
   font-weight: 600;
   cursor: pointer;
   font-family: 'Fira Sans', sans-serif;
-  transition: background 0.20s, color 0.20s;
   white-space: nowrap;
+  min-width: 130px;
+  text-align: center;
+  transition: background 0.20s, color 0.20s;
 }
- 
+
 .btn-copy:hover { background: #cfcfcf; }
- 
+
 .btn-copy--copied {
   background: var(--teal-dark);
   color: white;
+  text-align: center;
 }
- 
-.btn-copy--copied:hover { background: var(--teal); }
+
+.btn-copy--copied:hover { 
+  background: var(--teal); 
+}
+
+.btn-text {
+  display: inline-block;
+  width: 100%;
+}
 
 .current-block {
   display: flex;

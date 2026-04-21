@@ -25,6 +25,7 @@ type Queue struct {
 	Participants        []Participant `json:"participants"`
 	CurrentNumber       int           `json:"currentNumber"`
 	Finished            bool          `json:"finished"`
+	CurrentParticipant *Participant `json:"currentParticipant"`
 }
 
 type CreateQueueRequest struct {

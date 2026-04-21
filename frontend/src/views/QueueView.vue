@@ -9,9 +9,13 @@
       <h2 class="queue-title">{{ queueTitle }}</h2>
     </section>
     <section class="content">
-      <p class="wait-time">Осталось ждать: {{ waitTime }} мин.</p>
+      <p v-if="waitTime === -1" class="your-turn">Ваша очередь!</p>
+      <p v-else class="wait-time">Осталось ждать: {{ waitTime }} мин.</p>
       <p class="ahead-count">Перед вами: {{ peopleAhead }} чел.</p>
-      <button class="btn-leave" @click="leaveQueue">Покинуть очередь</button>
+      <button class="btn-leave" :disabled="waitTime === -1" :class="{ 'btn-leave--disabled': waitTime === -1 }"
+      @click="leaveQueue">
+  Покинуть очередь
+</button>
     </section>
   </div>
 </template>
@@ -19,9 +23,11 @@
 
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
+
+let pollTimer = null
 
 const route = useRoute()
 const router = useRouter()
@@ -31,21 +37,60 @@ const waitTime = ref(0)
 const peopleAhead = ref(0)
 
 onMounted(async () => {
+  await fetchQueue()                        // загружаем данные
+  pollTimer = setInterval(fetchQueue, 1500) // устанавливаем таймер на 3 секунды
+})
+
+onUnmounted(() => clearInterval(pollTimer)) // останавливаем таймер при уходе со страницы
+
+async function fetchQueue() {
   const queueId = route.params.id
   try {
     const response = await axios.get(`http://localhost:8080/api/queues/${queueId}`)
     const data = response.data
-    queueTitle.value = data.name
-    
-    waitTime.value = data.waitTime || 0
-    peopleAhead.value = data.peopleAhead || 0
+
+    if (data.finished) {
+      alert('Очередь завершена')
+      router.push('/')
+      return
+    }
+
+    const myId = sessionStorage.getItem('participantId')
+    const cp   = data.currentParticipant
+
+    // Если текущий вызванный — это я
+    if (cp && cp.id === myId) {
+      queueTitle.value = data.name
+      waitTime.value = -1  // специальный флаг "вызван"
+      peopleAhead.value = 0
+      return
+    }
+
+    // Моя позиция в очереди ожидания
+    const myPos = data.participants.findIndex(p => p.id === myId)
+
+    if (myPos === -1) {       // если нет в очереди, значит выгнали
+      sessionStorage.removeItem('participantId')
+      router.push('/')
+      return
+    }
+    queueTitle.value  = data.name
+    peopleAhead.value = myPos === -1 ? 0 : myPos
+    waitTime.value    = myPos === -1 ? 0 : myPos * 5
   } catch (error) {
-    alert('Очередь не найдена')
+    clearInterval(pollTimer)
     router.push('/')
   }
-})
+}
 
-const leaveQueue = () => {
+async function leaveQueue() {
+  const participantId = sessionStorage.getItem('participantId')
+  if (participantId) {
+    await axios.delete(
+      `http://localhost:8080/api/queues/${route.params.id}/participants/${participantId}`
+    )
+    sessionStorage.removeItem('participantId')
+  }
   router.push('/')
 }
 
@@ -137,5 +182,17 @@ function openParticipants() {
 
 .btn-leave:hover {
   background: var(--teal);
+}
+
+.your-turn {
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--teal-dark);
+  margin-bottom: 8px;  
+}
+
+.btn-leave--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 </style>

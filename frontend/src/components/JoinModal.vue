@@ -48,20 +48,40 @@ async function submitQueue() {
   loading.value  = true
   errorMsg.value = ''
  
-  try {
-    // Отправляем запрос на вступление
-    await axios.post(`http://localhost:8080/api/queues/${id}/join`, {
-      name: userName.value.trim(),
-    })
-    router.push(`/queue/${id}`)
-    emit('close')
-  } catch (err) {
-    errorMsg.value = err.response.status === 404
-      ? 'Очередь не найдена. Проверьте идентификатор.'
-      : 'Не удалось вступить в очередь'
-  } finally {
+try {
+  // Сначала проверяем статус очереди
+  const check = await axios.get(`http://localhost:8080/api/queues/${id}`)
+  if (check.data.finished) {
+    errorMsg.value = 'Эта очередь уже завершена'
     loading.value = false
+    return
   }
+
+  const max = check.data.maxParticipants
+  if (max && check.data.participants.length >= max) {
+    errorMsg.value = `Очередь заполнена`
+    loading.value = false
+    return
+  }
+
+  // Вступаем и сохраняем response
+  const response = await axios.post(`http://localhost:8080/api/queues/${id}/join`, {
+    name: userName.value.trim(),
+  })
+  sessionStorage.setItem('participantId', response.data.participantId)
+  router.push(`/queue/${id}`)
+  emit('close')
+} catch (err) {
+  if (err.response?.status === 409) {
+    errorMsg.value = 'Очередь заполнена'
+  } else if (err.response?.status === 404) {
+    errorMsg.value = 'Очередь не найдена. Проверьте идентификатор.'
+  } else {
+    errorMsg.value = 'Не удалось вступить в очередь.'
+  }
+} finally {
+  loading.value = false
+}
 }
 </script>
 
