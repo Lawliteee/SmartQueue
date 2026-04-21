@@ -176,12 +176,14 @@ func (h *Handler) CallNext(w http.ResponseWriter, r *http.Request) {
 	type NextResponse struct {
 		CurrentNumber int           `json:"currentNumber"`
 		Participants  []Participant `json:"participants"`
+		CurrentParticipant *Participant  `json:"currentParticipant"`
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(NextResponse{
 		CurrentNumber: queue.CurrentNumber,
 		Participants:  queue.Participants,
+		CurrentParticipant: currentParticipant,
 	})
 }
 
