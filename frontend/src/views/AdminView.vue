@@ -11,7 +11,7 @@
     </div>
 
     <!-- Текущий участник -->
-    <div class="current-block">
+    <div class="current-block" v-if="queue.currentNumber !== null">
       <div class="current-label">
         <span class="current-text">Текущий участник:</span>
         <span class="current-number">#{{ queue.currentNumber }}</span>
@@ -84,7 +84,7 @@ async function fetchQueue() {
       id: data.id,
       name: data.name,
       startTime: data.startTime || '12:00',
-      currentNumber: data.currentNumber || 1,
+      currentNumber: data.currentNumber ?? null,
       participants: data.participants || [],
       currentParticipant: data.currentParticipant || null,
     }
