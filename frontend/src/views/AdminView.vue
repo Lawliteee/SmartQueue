@@ -49,9 +49,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
+
+let pollTimer = null
 
 const route = useRoute()
 const router = useRouter()
@@ -73,11 +75,17 @@ const currentParticipant = computed(() => {
 })
 
 onMounted(async () => {
+  await fetchQueue()
+  pollTimer = setInterval(fetchQueue, 3000)
+})
+
+onUnmounted(() => clearInterval(pollTimer))
+
+async function fetchQueue() {
   const queueId = route.params.id
   try {
     const response = await axios.get(`http://localhost:8080/api/queues/${queueId}`)
     const data = response.data
-    
     queue.value = {
       id: data.id,
       name: data.name,
@@ -86,11 +94,9 @@ onMounted(async () => {
       participants: data.participants || []
     }
   } catch (error) {
-    console.error('Ошибка загрузки очереди:', error)
-    alert('Очередь не найдена')
-    router.push('/')
+    console.error('Ошибка загрузки:', error)
   }
-})
+}
 
 const copied = ref(false) 
 function copyId() {
