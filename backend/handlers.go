@@ -46,27 +46,25 @@ func (h *Handler) CreateQueue(w http.ResponseWriter, r *http.Request) {
 		Finished:            false,
 	}
 
-	h.store.Save(queue)
+	if err := h.store.Save(queue); err != nil {
+		http.Error(w, "Failed to create queue", http.StatusInternalServerError)
+		return
+	}
 
 	link := "http://localhost:5173/queue/" + id
 
-	resp := QueueResponse{
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(QueueResponse{
 		ID:   id,
 		Name: req.Name,
 		Link: link,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(resp)
-
-	println("Новая очередь создана:", link)
+	})
 }
 
-// GET /api/queues/{id} – получение информации об очереди (для участника и админа)
+// GET /api/queues/{id} – информация об очереди
 func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id := mux.Vars(r)["id"]
 
 	queue, ok := h.store.Get(id)
 	if !ok {
@@ -85,7 +83,8 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 		Finished      bool          `json:"finished"`
 	}
 
-	info := QueueInfo{
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(QueueInfo{
 		ID:            queue.ID,
 		Name:          queue.Name,
 		StartTime:     queue.StartTime,
@@ -94,19 +93,14 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 		PeopleAhead:   len(queue.Participants),
 		WaitTime:      len(queue.Participants) * 5, // заглушка: 5 мин на человека
 		Finished:      queue.Finished,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(info)
+	})
 }
 
 // POST /api/queues/{id}/join – вступление в очередь
 func (h *Handler) JoinQueue(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id := mux.Vars(r)["id"]
 
-	queue, ok := h.store.Get(id)
-	if !ok {
+	if _, ok := h.store.Get(id); !ok {
 		http.Error(w, "Queue not found", http.StatusNotFound)
 		return
 	}
@@ -125,26 +119,23 @@ func (h *Handler) JoinQueue(w http.ResponseWriter, r *http.Request) {
 
 	h.store.AddParticipant(id, participant)
 
+	queue, _ := h.store.Get(id)
+
 	type JoinResponse struct {
 		ParticipantID string `json:"participantId"`
 		Position      int    `json:"position"`
 	}
 
-	// Получаем актуальное состояние очереди для позиции
-	queue, _ = h.store.Get(id)
-	position := len(queue.Participants)
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(JoinResponse{
 		ParticipantID: participant.ID,
-		Position:      position,
+		Position:      len(queue.Participants),
 	})
 }
 
 // POST /api/admin/queues/{id}/next – вызвать следующего участника
 func (h *Handler) CallNext(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id := mux.Vars(r)["id"]
 
 	queue, ok := h.store.Get(id)
 	if !ok {
@@ -157,9 +148,7 @@ func (h *Handler) CallNext(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Удаляем первого участника и увеличиваем счётчик
 	h.store.ShiftParticipant(id)
-
 	queue, _ = h.store.Get(id)
 
 	type NextResponse struct {
@@ -176,16 +165,13 @@ func (h *Handler) CallNext(w http.ResponseWriter, r *http.Request) {
 
 // POST /api/admin/queues/{id}/finish – завершить очередь
 func (h *Handler) FinishQueue(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id := mux.Vars(r)["id"]
 
-	_, ok := h.store.Get(id)
-	if !ok {
+	if _, ok := h.store.Get(id); !ok {
 		http.Error(w, "Queue not found", http.StatusNotFound)
 		return
 	}
 
 	h.store.FinishQueue(id)
-
 	w.WriteHeader(http.StatusOK)
 }
