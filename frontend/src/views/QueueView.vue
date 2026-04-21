@@ -69,6 +69,11 @@ async function fetchQueue() {
     // Моя позиция в очереди ожидания
     const myPos = data.participants.findIndex(p => p.id === myId)
 
+    if (myPos === -1) {       // если нет в очереди, значит выгнали
+      sessionStorage.removeItem('participantId')
+      router.push('/')
+      return
+    }
     queueTitle.value  = data.name
     peopleAhead.value = myPos === -1 ? 0 : myPos
     waitTime.value    = myPos === -1 ? 0 : myPos * 5
