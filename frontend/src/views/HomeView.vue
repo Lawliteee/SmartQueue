@@ -8,7 +8,7 @@
       <div class="role-cards">
         <div class="role-card">
           <span class="role-label">Участник</span>
-          <button class="btn-primary1" @click="openModal">Вступить в очередь</button>
+          <button class="btn-primary1" @click="modalOpen = true">Вступить в очередь</button>
         </div>
         <div class="role-card">
           <span class="role-label">Организатор</span>
@@ -18,13 +18,7 @@
     </section>
   </main>
 
-  <div class="modal" v-if="modalOpen" @click.self="modalOpen = false">
-    <div class="modal-content">
-      <h3>Введите ссылку на очередь:</h3>
-      <input v-model="queueLink" type="text" class="modal-input" />
-      <button class="modal-btn" @click="submitQueue">Вступить</button>
-    </div>
-  </div>
+  <JoinQueueModal v-if="modalOpen" @close="modalOpen = false" />
 </template>
 
 
@@ -32,25 +26,10 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import JoinQueueModal from '../components/JoinModal.vue'
 
 const router = useRouter()
-
-const modalOpen = ref(false) // Открыто ли окно
-const queueLink = ref('')    // Ссылка, котору. ввел пользователь
-
-function openModal() {
-  modalOpen.value = true
-}
-
-function submitQueue() {
-  if (queueLink.value.trim()) {
-    const url = queueLink.value.trim()
-    const parts = url.split('/')
-    const queueId = parts[parts.length - 1] // Извлекаем последний элемент
-    router.push(`/queue/${queueId}`)
-    modalOpen.value = false
-  }
-}
+const modalOpen = ref(false)
 </script>
 
 <style scoped>
@@ -128,66 +107,5 @@ h1 {
   padding: 14px 40px;
 }
 
-.btn-primary1:hover, .btn-primary2:hover {
-  background: var(--teal);
-}
-
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-}
-
-.modal-content {
-  background: white;
-  padding: 35px;
-  border-radius: 18px;
-  max-width: 400px;
-  text-align: center;
-}
-
-.modal-content h3 {
-  font-size: 21px;
-  font-weight: 400;
-  margin-bottom: 18px;
-  color: var(--text);
-}
-
-.modal-input {
-  width: 100%;
-  padding: 14px;
-  margin-bottom: 30px;
-  border: 1px solid var(--divider);
-  border-color: var(--teal);
-  border-radius: 12px;
-  font-family: 'Fira Sans', sans-serif;
-  font-size: 15px;
-}
-
-.modal-input:focus {
-  outline: none;
-}
-
-.modal-btn {
-  background: var(--teal-dark);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  padding: 14px 20px;
-  font-size: 16px;
-  font-weight: 700;
-  width: 60%;
-  font-family: 'Fira Sans', sans-serif;
-}
-
-.modal-btn:hover {
-  background: var(--teal);
-}
+.btn-primary1:hover, .btn-primary2:hover { background: var(--teal); }
 </style>
