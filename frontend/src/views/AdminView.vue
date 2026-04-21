@@ -115,8 +115,8 @@ function callNext() {
   }
 }
 
-function finishQueue() {
-  // TODO: POST
+async function finishQueue() {
+  await axios.post(`http://localhost:8080/api/admin/queues/${route.params.id}/finish`)
   router.push('/')
 }
 
