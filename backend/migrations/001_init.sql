@@ -36,3 +36,6 @@ CREATE TABLE IF NOT EXISTS participants (
 -- Индекс для быстрой выборки участников очереди по порядку
 CREATE INDEX IF NOT EXISTS idx_participants_queue_joined
     ON participants(queue_id, joined_at ASC);
+
+ALTER TABLE queues ADD COLUMN IF NOT EXISTS current_participant_id TEXT;
+ALTER TABLE queues ADD COLUMN IF NOT EXISTS current_participant_name TEXT;

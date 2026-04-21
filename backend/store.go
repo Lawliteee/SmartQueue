@@ -120,28 +120,41 @@ func (s *Store) AddParticipant(queueID string, p Participant) {
 	}
 }
 
+func (s *Store) RemoveParticipant(queueID, participantID string) {
+    s.db.Exec(`DELETE FROM participants WHERE id = $1 AND queue_id = $2`,
+        participantID, queueID)
+}
+
 // ShiftParticipant удаляет первого участника (FIFO) и увеличивает счётчик.
 func (s *Store) ShiftParticipant(queueID string) {
-	tx, err := s.db.Begin()
-	if err != nil {
-		return
-	}
-	defer tx.Rollback()
+    tx, err := s.db.Begin()
+    if err != nil { return }
+    defer tx.Rollback()
 
-	_, err = tx.Exec(`
-		DELETE FROM participants WHERE id = (
-			SELECT id FROM participants
-			WHERE queue_id = $1
-			ORDER BY joined_at ASC LIMIT 1
-		)`, queueID,
-	)
-	if err != nil {
-		log.Printf("Ошибка ShiftParticipant для %s: %v", queueID, err)
-		return
-	}
+    // Запоминаем первого участника как текущего
+    var pID, pName string
+    tx.QueryRow(`
+        SELECT id, name FROM participants
+        WHERE queue_id = $1 ORDER BY joined_at ASC LIMIT 1
+    `, queueID).Scan(&pID, &pName)
 
-	tx.Exec(`UPDATE queues SET current_number = current_number + 1 WHERE id = $1`, queueID)
-	tx.Commit()
+    // Удаляем его из очереди ожидания
+    tx.Exec(`
+        DELETE FROM participants WHERE id = (
+            SELECT id FROM participants
+            WHERE queue_id = $1 ORDER BY joined_at ASC LIMIT 1
+        )`, queueID)
+
+    // Сохраняем как текущего и увеличиваем счётчик
+    tx.Exec(`
+        UPDATE queues
+        SET current_number = current_number + 1,
+            current_participant_id = $2,
+            current_participant_name = $3
+        WHERE id = $1
+    `, queueID, pID, pName)
+
+    tx.Commit()
 }
 
 // FinishQueue помечает очередь как завершённую.
