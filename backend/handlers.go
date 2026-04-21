@@ -94,6 +94,7 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 		WaitTime      int           `json:"waitTime"`
 		Finished      bool          `json:"finished"`
 		CurrentParticipant *Participant `json:"currentParticipant"`
+		MaxParticipants int `json:"maxParticipants"`
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -107,6 +108,7 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 		WaitTime:      len(queue.Participants) * 5, // заглушка: 5 мин на человека
 		Finished:      queue.Finished,
 		CurrentParticipant: currentParticipant,
+		MaxParticipants: queue.MaxParticipants,
 	})
 }
 
@@ -114,7 +116,8 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) JoinQueue(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
-	if _, ok := h.store.Get(id); !ok {
+	queue, ok := h.store.Get(id)
+	if !ok {
 		http.Error(w, "Queue not found", http.StatusNotFound)
 		return
 	}
@@ -125,6 +128,11 @@ func (h *Handler) JoinQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if queue.MaxParticipants > 0 && len(queue.Participants) >= queue.MaxParticipants {
+		http.Error(w, "Queue is full", http.StatusConflict)
+		return
+	}
+	
 	participant := Participant{
 		ID:       uuid.New().String(),
 		Name:     req.Name,
@@ -133,7 +141,7 @@ func (h *Handler) JoinQueue(w http.ResponseWriter, r *http.Request) {
 
 	h.store.AddParticipant(id, participant)
 
-	queue, _ := h.store.Get(id)
+	queue, _ = h.store.Get(id)
 
 	type JoinResponse struct {
 		ParticipantID string `json:"participantId"`

@@ -57,6 +57,13 @@ try {
     return
   }
 
+  const max = check.data.maxParticipants
+  if (max && check.data.participants.length >= max) {
+    errorMsg.value = `Очередь заполнена`
+    loading.value = false
+    return
+  }
+
   // Вступаем и сохраняем response
   const response = await axios.post(`http://localhost:8080/api/queues/${id}/join`, {
     name: userName.value.trim(),
@@ -65,9 +72,13 @@ try {
   router.push(`/queue/${id}`)
   emit('close')
 } catch (err) {
-  errorMsg.value = err.response?.status === 404
-    ? 'Очередь не найдена. Проверьте идентификатор.'
-    : 'Не удалось вступить в очередь.'
+  if (err.response?.status === 409) {
+    errorMsg.value = 'Очередь заполнена'
+  } else if (err.response?.status === 404) {
+    errorMsg.value = 'Очередь не найдена. Проверьте идентификатор.'
+  } else {
+    errorMsg.value = 'Не удалось вступить в очередь.'
+  }
 } finally {
   loading.value = false
 }
