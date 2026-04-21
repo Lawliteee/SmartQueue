@@ -98,7 +98,7 @@ function copyId() {
   if (queue.value.id) {
     navigator.clipboard.writeText(queue.value.id)
     copied.value = true
-    setTimeout(() => { copied.value = false }, 2000)
+    setTimeout(() => { copied.value = false }, 1000)
   }
 }
 
