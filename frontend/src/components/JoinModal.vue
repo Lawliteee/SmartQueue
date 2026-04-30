@@ -20,6 +20,7 @@
 
 
 <script setup>
+import { setCookie } from '../utils/cookies.js'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
@@ -68,7 +69,7 @@ try {
   const response = await axios.post(`http://localhost:8080/api/queues/${id}/join`, {
     name: userName.value.trim(),
   })
-  sessionStorage.setItem('participantId', response.data.participantId)
+  setCookie('participantId', response.data.participantId, 7)
   router.push(`/queue/${id}`)
   emit('close')
 } catch (err) {
