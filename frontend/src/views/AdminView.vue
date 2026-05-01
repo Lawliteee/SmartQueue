@@ -1,6 +1,11 @@
 <template>
   <div class="admin-page">
 
+    <!-- Кнопка чата -->
+    <button class="chat-btn" title="Чат">
+      <img src="/icons/chat.png" alt="чат" width="30" height="30" />
+    </button>
+
     <!-- Верхняя панель -->
     <div class="queue-bar">
       <span class="queue-name">{{ queue.name }}</span>
@@ -131,7 +136,27 @@ async function finishQueue() {
   height: 100vh;
   max-height: 100vh;
   overflow: hidden;
+  position: relative;
 }
+
+/* Кнопка чата */
+.chat-btn {
+  position: fixed;
+  top: 90px;
+  left: 20px;
+  width: 46px;
+  height: 46px;
+  background: var(--panel);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.20s;
+  z-index: 10;
+}
+.chat-btn:hover { background: #cfcfcf; }
 
 .queue-bar {
   display: flex;
