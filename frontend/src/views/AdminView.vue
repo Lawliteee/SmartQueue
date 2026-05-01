@@ -16,37 +16,32 @@
     </div>
 
     <!-- Текущий участник -->
-    <div class="current-block" v-if="queue.currentNumber !== null">
+    <div class="current-block" :class="{ 'current-block-ns': notStarted }">
       <div class="current-label">
-        <span class="current-text">Текущий участник:</span>
-        <span class="current-number">#{{ queue.currentNumber }}</span>
+        <span class="current-text">{{ notStarted ? 'Следующий:' : 'Текущий участник:' }}</span>
+        <span class="current-number" v-if="!notStarted">#{{ queue.currentNumber }}</span>
       </div>
       <div class="current-participant-info">
-        <span class="participant-name">{{ currentParticipant?.name ?? '—' }}</span>
-        <span class="participant-priority">Приоритет {{ currentParticipant?.priority ?? '-' }}</span>
+        <span class="participant-name">{{ displayedParticipant?.name ?? '—' }}</span>
+        <span class="participant-priority">Приоритет {{ displayedParticipant?.priority ?? '-' }}</span>
       </div>
     </div>
 
     <!-- Список участников -->
-    <div class="participants-panel">
-      <div
-        v-for="(p, idx) in queue.participants"
-        :key="p.id"
-        class="participant-row"
-        :class="{ 'participant-row--first': idx === 0 }"
-      >
+    <div class="participants-panel":class="{ 'participants-panel-ns': notStarted }">
+      <div v-for="(p, idx) in displayedParticipants":key="p.id" class="participant-row":class="{ 'participant-row--first': idx === 0 }">
         <span class="p-number">{{ idx + 1 }}.</span>
         <span class="p-name">{{ p.name }}</span>
       </div>
-      <div v-if="queue.participants.length === 0" class="empty-list">
-        Участников пока нет
-      </div>
+     <div v-if="displayedParticipants.length === 0" class="empty-list">Участников пока нет</div>
     </div>
 
     <!-- кнопки внизу -->
     <div class="actions">
       <button class="btn-secondary">Открыть чат</button>
-      <button class="btn-next" @click="callNext">Позвать следующего</button>
+      <button class="btn-next" @click="callNext">
+        {{ notStarted ? 'Начать очередь' : 'Позвать следующего' }}
+      </button>
       <button class="btn-secondary" @click="finishQueue">Завершить очередь</button>
     </div>
   </div>
@@ -60,6 +55,8 @@ import axios from 'axios'
 
 let pollTimer = null
 
+const notStarted = computed(() => queue.value.currentNumber === 0)
+
 const route = useRoute()
 const router = useRouter()
 
@@ -71,7 +68,19 @@ const queue = ref({
   participants: []
 })
 
-const currentParticipant = computed(() => queue.value.currentParticipant ?? null)
+// Участник для отображения
+const displayedParticipant = computed(() =>
+  queue.value.currentParticipant ?? queue.value.participants[0] ?? null
+)
+
+// Список для отображения
+const displayedParticipants = computed(() => {
+  const cp = queue.value.currentParticipant
+  if (!cp) {
+    return queue.value.participants
+  }
+  return [cp, ...queue.value.participants] // Список с текущим и последующими участниками
+})
 
 onMounted(async () => {
   await fetchQueue()
@@ -349,4 +358,9 @@ async function finishQueue() {
 .btn-next:hover {
   background: var(--teal);
 }
+
+.participants-panel-ns { opacity: 0.4; }
+
+.current-block-ns { opacity: 0.4; }
+
 </style>

@@ -7,7 +7,7 @@
       </div>
       <div class="participants-list">
         <div
-          v-for="(p, idx) in participants":key="p.id"
+          v-for= "(p, idx) in displayedParticipants"
           class="participant-row":class="{ 'participant-row--first': idx === 0 }">
           <span class="p-number">{{ idx + 1 }}.</span>
           <span class="p-name">{{ p.name }}</span>
@@ -18,8 +18,21 @@
 </template>
 
 <script setup>
-    defineProps({ participants: { type: Array, default: () => [] } })
-    defineEmits(['close'])
+import { computed } from 'vue'
+
+defineEmits(['close'])
+
+const props = defineProps({
+  participants: { type: Array, default: () => [] },
+  currentParticipant: { type: Object, default: null }
+})
+
+const displayedParticipants = computed(() => {
+  if (!props.currentParticipant) return props.participants
+  return [props.currentParticipant, ...props.participants]
+})
+
+
 </script>
 
 <style scoped>
