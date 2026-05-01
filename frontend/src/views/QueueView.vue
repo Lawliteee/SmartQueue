@@ -23,7 +23,9 @@
       </button>
     </section>
 
+    <!-- Модалки -->
     <QueueFinishedModal v-if="showFinished" @confirm="onFinishedConfirm"/>
+    <ParticipantsModal v-if="showParticipants":participants="participants"@close="showParticipants = false"/>
   </div>
 </template>
 
@@ -32,6 +34,7 @@
 <script setup>
 import { getCookie, removeCookie } from '../utils/cookies.js'
 import QueueFinishedModal from '../components/QueueFinishedModal.vue'
+import ParticipantsModal from '../components/ParticipantsModal.vue'
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
@@ -39,6 +42,9 @@ import axios from 'axios'
 let pollTimer = null
 
 const showFinished = ref(false)
+
+const showParticipants = ref(false)
+const participants = ref([])
 
 const route = useRoute()
 const router = useRouter()
@@ -59,6 +65,8 @@ async function fetchQueue() {
   try {
     const response = await axios.get(`http://localhost:8080/api/queues/${queueId}`)
     const data = response.data
+
+    participants.value = data.participants || [] // Получаем участников очереди
 
     if (data.finished) {
       showFinished.value = true
@@ -103,9 +111,9 @@ async function leaveQueue() {
   router.push('/')
 }
 
-// TODO
+// Открывает список участников
 function openParticipants() {
-  // список участников
+  showParticipants.value = true
 }
 
 function onFinishedConfirm() {
