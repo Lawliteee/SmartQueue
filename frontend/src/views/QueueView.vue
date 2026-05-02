@@ -37,12 +37,12 @@
     <!-- Модалки -->
     <QueueFinishedModal v-if="showFinished" @confirm="onFinishedConfirm" />
     <ParticipantsModal
-      v-if="showParticipants"
-      :participants="participants"
-      :currentParticipant="currentParticipant"
-      :myId="getCookie('participantId')"
-      @close="showParticipants = false"
-    />
+      v-if="showParticipants":participants="participants"
+      :currentParticipant="currentParticipant":myId="getCookie('participantId')"
+      @close="showParticipants = false"/>
+    <SwapRequestModal
+      v-if="showSwapRequest":fromName="swapFromName"
+      @accept="acceptSwap" @decline="declineSwap"/>
   </div>
 </template>
 
@@ -50,6 +50,7 @@
 import { getCookie, removeCookie } from '../utils/cookies.js'
 import QueueFinishedModal from '../components/QueueFinishedModal.vue'
 import ParticipantsModal from '../components/ParticipantsModal.vue'
+import SwapRequestModal from '../components/SwapRequestModal.vue'
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
@@ -64,6 +65,9 @@ const participants = ref([])
 const route = useRoute()
 const router = useRouter()
 
+const showSwapRequest = ref(false)
+const swapFromName = ref('')
+
 const queueTitle = ref('')
 const waitTime = ref(0)
 const peopleAhead = ref(0)
@@ -75,7 +79,7 @@ onMounted(async () => {
   pollTimer = setInterval(fetchQueue, 1500) // устанавливаем таймер на 1,5 секунды
 })
 
-onUnmounted(() => clearInterval(pollTimer)) // останавливаем таймер при уходе со страницы
+onUnmounted(() => {clearInterval(pollTimer); window.removeEventListener('keydown', onKeydown) }) // останавливаем таймер при уходе со страницы
 
 async function fetchQueue() {
   const queueId = route.params.id
@@ -149,6 +153,30 @@ async function skipMe() {
   //   participantId
   // })
   console.log('skip requested')
+}
+
+// Согласие на обмен местами
+function acceptSwap() {
+  // TODO
+  // await axios.post(`/api/queues/${route.params.id}/swap/accept`, { participantId: getCookie('participantId') })
+  showSwapRequest.value = false
+}
+
+// Отказ от обемена местами
+function declineSwap() {
+  // TODO
+  // await axios.post(`/api/queues/${route.params.id}/swap/decline`, { participantId: getCookie('participantId') })
+  showSwapRequest.value = false
+}
+
+
+// Тестирование открытия модалки на T
+window.addEventListener('keydown', onKeydown)
+function onKeydown(e) {
+  if (e.key === 't') {
+    swapFromName.value = 'Иван'
+    showSwapRequest.value = true
+  }
 }
 </script>
 
