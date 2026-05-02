@@ -19,14 +19,19 @@
       <p v-else class="wait-time">Осталось ждать: {{ waitTime }} мин.</p>
       <p v-if="currentNumber > 0" class="ahead-count">Перед вами: {{ peopleAhead }} чел.</p>
       <p v-else class="ahead-count" style="visibility: hidden">placeholder</p>
-      <button
-        class="btn-leave"
-        :disabled="waitTime === -1"
-        :class="{ 'btn-leave--disabled': waitTime === -1 }"
-        @click="leaveQueue"
-      >
-        Покинуть очередь
-      </button>
+      <div class="btn-row">
+        <button class="btn-skip" @click="skipMe" :disabled="waitTime === -1">
+          Пропустить меня
+        </button>
+        <button
+          class="btn-leave"
+          :disabled="waitTime === -1"
+          :class="{ 'btn-leave--disabled': waitTime === -1 }"
+          @click="leaveQueue"
+        >
+          Покинуть очередь
+        </button>
+      </div>
     </section>
 
     <!-- Модалки -->
@@ -134,6 +139,16 @@ function openParticipants() {
 function onFinishedConfirm() {
   showFinished.value = false
   router.push('/')
+}
+
+// Пропускает место в очереди
+async function skipMe() {
+  // TODO
+  // const participantId = getCookie('participantId')
+  // await axios.post(`http://localhost:8080/api/queues/${route.params.id}/skip`, {
+  //   participantId
+  // })
+  console.log('skip requested')
 }
 </script>
 
@@ -248,6 +263,35 @@ function onFinishedConfirm() {
 }
 
 .btn-leave--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-skip {
+  background: var(--panel);
+  color: #2c2c2c;
+  border: none;
+  border-radius: 12px;
+  padding: 16px 32px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  transition: background 0.2s;
+}
+
+.btn-skip:hover {
+  background: #cfcfcf;
+}
+
+.btn-skip:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
