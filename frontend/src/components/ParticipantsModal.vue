@@ -7,10 +7,21 @@
       </div>
       <div class="participants-list">
         <div
-          v-for= "(p, idx) in displayedParticipants"
-          class="participant-row":class="{ 'participant-row--first': idx === 0 }">
+          v-for="(p, idx) in displayedParticipants"
+          :key="p.id"
+          class="participant-row"
+          :class="{ 'participant-row--first': idx === 0 }"
+        >
           <span class="p-number">{{ idx + 1 }}.</span>
           <span class="p-name">{{ p.name }}</span>
+          <button
+            v-if="p.id !== myId"
+            class="btn-swap"
+            @click="requestSwap(p)"
+            title="Предложить обмен"
+          >
+            <img src="/icons/swap.png" alt="обмен" width="16" height="16" />
+          </button>
         </div>
       </div>
     </div>
@@ -24,7 +35,8 @@ defineEmits(['close'])
 
 const props = defineProps({
   participants: { type: Array, default: () => [] },
-  currentParticipant: { type: Object, default: null }
+  currentParticipant: { type: Object, default: null },
+  myId: { type: String, default: null },
 })
 
 const displayedParticipants = computed(() => {
@@ -32,15 +44,24 @@ const displayedParticipants = computed(() => {
   return [props.currentParticipant, ...props.participants]
 })
 
-
+// Предлагает другому пользователю обмен местами
+function requestSwap(targetParticipant) {
+  // TODO
+  // await axios.post(`/api/queues/${queueId}/swap`, {
+  //   participantId: myId,
+  //   targetId: targetParticipant.id
+  // })
+  console.log('swap requested with ', targetParticipant.name)
+}
 </script>
 
 <style scoped>
-
 .modal {
   position: fixed;
-  top: 70px; left: 0;
-  width: 100%; height: 100%;
+  top: 70px;
+  left: 0;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
@@ -91,7 +112,9 @@ h3 {
   line-height: 1;
 }
 
-.btn-close:hover { color: var(--text); }
+.btn-close:hover {
+  color: var(--text);
+}
 
 .participants-list {
   overflow-y: auto;
@@ -143,4 +166,21 @@ h3 {
   }
 }
 
+/* Обмен местами */
+.btn-swap {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  opacity: 0.6;
+  transition: opacity 0.18s;
+}
+
+.btn-swap:hover {
+  opacity: 1;
+}
 </style>

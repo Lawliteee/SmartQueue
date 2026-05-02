@@ -1,6 +1,5 @@
 <template>
   <div class="page-body">
-
     <!-- Кнопка чата -->
     <button class="chat-btn" title="Чат">
       <img src="/icons/chat.png" alt="чат" width="30" height="30" />
@@ -19,21 +18,28 @@
       <p v-else-if="currentNumber === 0" class="wait-time">Очередь ещё не началась</p>
       <p v-else class="wait-time">Осталось ждать: {{ waitTime }} мин.</p>
       <p v-if="currentNumber > 0" class="ahead-count">Перед вами: {{ peopleAhead }} чел.</p>
-      <p v-else class="ahead-count" style="visibility: hidden;">placeholder</p>
-      <button class="btn-leave" :disabled="waitTime === -1" :class="{ 'btn-leave--disabled': waitTime === -1 }"
-        @click="leaveQueue"> Покинуть очередь
+      <p v-else class="ahead-count" style="visibility: hidden">placeholder</p>
+      <button
+        class="btn-leave"
+        :disabled="waitTime === -1"
+        :class="{ 'btn-leave--disabled': waitTime === -1 }"
+        @click="leaveQueue"
+      >
+        Покинуть очередь
       </button>
     </section>
 
     <!-- Модалки -->
-    <QueueFinishedModal v-if="showFinished" @confirm="onFinishedConfirm"/>
-    <ParticipantsModal v-if="showParticipants"
-      :participants="participants":currentParticipant="currentParticipant"
-      @close="showParticipants = false"/>
+    <QueueFinishedModal v-if="showFinished" @confirm="onFinishedConfirm" />
+    <ParticipantsModal
+      v-if="showParticipants"
+      :participants="participants"
+      :currentParticipant="currentParticipant"
+      :myId="getCookie('participantId')"
+      @close="showParticipants = false"
+    />
   </div>
 </template>
-
-
 
 <script setup>
 import { getCookie, removeCookie } from '../utils/cookies.js'
@@ -60,7 +66,7 @@ const currentNumber = ref(0)
 const currentParticipant = ref(null)
 
 onMounted(async () => {
-  await fetchQueue()                        // загружаем данные
+  await fetchQueue() // загружаем данные
   pollTimer = setInterval(fetchQueue, 1500) // устанавливаем таймер на 1,5 секунды
 })
 
@@ -72,7 +78,7 @@ async function fetchQueue() {
     const response = await axios.get(`http://localhost:8080/api/queues/${queueId}`)
     const data = response.data
 
-    participants.value = data.participants || []   // Получаем участников очереди
+    participants.value = data.participants || [] // Получаем участников очереди
     currentNumber.value = data.currentNumber ?? 0
     currentParticipant.value = data.currentParticipant ?? null
 
@@ -86,20 +92,21 @@ async function fetchQueue() {
     // Если текущий вызванный - я
     if (cp && cp.id === myId) {
       queueTitle.value = data.name
-      waitTime.value = -1  // флаг "вызван"
+      waitTime.value = -1 // флаг "вызван"
       peopleAhead.value = 0
       return
     }
 
     // Моя позиция в очереди ожидания
-    const myPos = data.participants.findIndex(p => p.id === myId)
+    const myPos = data.participants.findIndex((p) => p.id === myId)
 
-    if (myPos === -1) {       // если нет в очереди значит выгнали
+    if (myPos === -1) {
+      // если нет в очереди значит выгнали
       removeCookie('participantId')
       router.push('/')
       return
     }
-    queueTitle.value  = data.name
+    queueTitle.value = data.name
     peopleAhead.value = myPos === -1 ? 0 : myPos
     waitTime.value = myPos === -1 ? 0 : myPos * 5
   } catch (error) {
@@ -112,7 +119,7 @@ async function leaveQueue() {
   const participantId = getCookie('participantId')
   if (participantId) {
     await axios.delete(
-      `http://localhost:8080/api/queues/${route.params.id}/participants/${participantId}`
+      `http://localhost:8080/api/queues/${route.params.id}/participants/${participantId}`,
     )
     removeCookie('participantId')
   }
@@ -129,8 +136,6 @@ function onFinishedConfirm() {
   router.push('/')
 }
 </script>
-
-
 
 <style scoped>
 .page-body {
@@ -156,10 +161,10 @@ function onFinishedConfirm() {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.20s;
+  transition: background 0.2s;
   flex-shrink: 0;
 }
- 
+
 .burger-btn:hover {
   background: #cfcfcf;
 }
@@ -178,12 +183,13 @@ function onFinishedConfirm() {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.20s;
+  transition: background 0.2s;
   flex-shrink: 0;
 }
 
-.chat-btn:hover { background: #cfcfcf; }
-
+.chat-btn:hover {
+  background: #cfcfcf;
+}
 
 /* --------------------------- */
 
@@ -238,7 +244,7 @@ function onFinishedConfirm() {
   font-size: 40px;
   font-weight: 700;
   color: var(--teal-dark);
-  margin-bottom: 8px;  
+  margin-bottom: 8px;
 }
 
 .btn-leave--disabled {
