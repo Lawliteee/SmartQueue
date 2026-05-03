@@ -43,6 +43,7 @@
     <SwapRequestModal
       v-if="showSwapRequest":fromName="swapFromName"
       @accept="acceptSwap" @decline="declineSwap"/>
+    <KickedModal v-if="showKicked" @confirm="router.push('/')"/>
   </div>
 </template>
 
@@ -51,6 +52,7 @@ import { getCookie, removeCookie } from '../utils/cookies.js'
 import QueueFinishedModal from '../components/QueueFinishedModal.vue'
 import ParticipantsModal from '../components/ParticipantsModal.vue'
 import SwapRequestModal from '../components/SwapRequestModal.vue'
+import KickedModal from '../components/KickedModal.vue'
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
@@ -58,6 +60,7 @@ import axios from 'axios'
 let pollTimer = null
 
 const showFinished = ref(false)
+const showKicked = ref(false)
 
 const showParticipants = ref(false)
 const participants = ref([])
@@ -93,6 +96,7 @@ async function fetchQueue() {
 
     if (data.finished) {
       showFinished.value = true
+      return
     }
 
     const myId = getCookie('participantId')
@@ -109,10 +113,10 @@ async function fetchQueue() {
     // Моя позиция в очереди ожидания
     const myPos = data.participants.findIndex((p) => p.id === myId)
 
-    if (myPos === -1) {
-      // если нет в очереди значит выгнали
+    if (myPos === -1) { // если нет в очереди значит выгнали
       removeCookie('participantId')
-      router.push('/')
+      clearInterval(pollTimer)
+      showKicked.value = true
       return
     }
     queueTitle.value = data.name
