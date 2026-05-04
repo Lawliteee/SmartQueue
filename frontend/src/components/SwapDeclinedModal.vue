@@ -2,14 +2,12 @@
   <div class="swap-modal">
     <div class="swap-content">
       <div class="swap-header">
-        <h3>Предложение обмена</h3>
+        <h3>Обмен отклонён</h3>
+        <button class="btn-close" @click="$emit('confirm')">Х</button>
       </div>
-
-      <p class="swap-text">{{ fromName }} предлагает поменяться с вами местами</p>
-
+      <p class="swap-text">{{ fromName }} отказал в обмене местами</p>
       <div class="swap-actions">
-        <button class="btn-decline" @click="$emit('decline')">Отказать</button>
-        <button class="btn-accept" @click="$emit('accept')">Принять</button>
+        <button class="btn-ok" @click="$emit('confirm')">Ок</button>
       </div>
     </div>
   </div>
@@ -17,11 +15,10 @@
 
 <script setup>
 defineProps({ fromName: { type: String, default: '' } })
-defineEmits(['accept', 'decline'])
+defineEmits(['confirm'])
 </script>
 
 <style scoped>
-
 .swap-modal {
   position: fixed;
   bottom: 32px;
@@ -56,6 +53,18 @@ h3 {
   margin: 0;
 }
 
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0;
+  line-height: 1;
+}
+
+.btn-close:hover { color: var(--text); }
+
 .swap-text {
   font-size: 14px;
   padding: 14px 20px;
@@ -64,13 +73,12 @@ h3 {
 }
 
 .swap-actions {
-  display: flex;
-  gap: 8px;
   padding: 0 20px 16px;
+  text-align: center;
 }
 
-.btn-decline {
-  flex: 1;
+.btn-ok {
+  width: 50%;
   background: var(--panel);
   color: var(--text);
   border: none;
@@ -83,28 +91,12 @@ h3 {
   transition: background 0.20s;
 }
 
-.btn-decline:hover { background: #cfcfcf; }
-
-.btn-accept {
-  flex: 1;
-  background: var(--teal-dark);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  padding: 10px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: 'Fira Sans', sans-serif;
-  transition: background 0.20s;
-}
-
-.btn-accept:hover { background: var(--teal); }
+.btn-ok:hover { background: #cfcfcf; }
 
 @keyframes slideInLeft {
   from {
     transform: translateX(-110%);
-    opacity: 0;
+     opacity: 0;
   } to {
     transform: translateX(0);
     opacity: 1;
