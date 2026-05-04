@@ -2,7 +2,7 @@
   <div class="admin-page">
 
     <!-- Кнопка чата -->
-    <button class="chat-btn" title="Чат">
+    <button class="chat-btn" @click="showChat = true" title="Чат">
       <img src="/icons/chat.png" alt="чат" width="30" height="30" />
     </button>
 
@@ -49,14 +49,18 @@
     </div>
   </div>
 
+  <ChatModal v-if="showChat" @close="showChat = false" />
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
+import ChatModal from '../components/ChatModal.vue'
 
 let pollTimer = null
+
+const showChat = ref(false)
 
 const notStarted = computed(() => queue.value.currentNumber === 0)
 
