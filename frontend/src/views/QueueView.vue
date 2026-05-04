@@ -199,8 +199,8 @@ function onKeydown(e) {
 
 /* Список участников */
 .burger-btn {
-  position: absolute;
-  top: -8px;
+  position: fixed;
+  top: 90px;
   right: 24px;
   width: 46px;
   height: 46px;
@@ -221,8 +221,8 @@ function onKeydown(e) {
 
 /* Чат */
 .chat-btn {
-  position: absolute;
-  top: -8px;
+  position: fixed;
+  top: 90px;
   left: 24px;
   width: 46px;
   height: 46px;
