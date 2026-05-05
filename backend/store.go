@@ -154,6 +154,11 @@ func (s *Store) ShiftParticipant(queueID string) {
         WHERE id = $1
     `, queueID, pID, pName)
 
+	tx.Exec(`
+    	INSERT INTO queue_wait_stats (queue_id, wait_time, participants_count)
+    	VALUES ($1, $2, $3)
+		`, queueID, 5, 1)
+
     tx.Commit()
 }
 

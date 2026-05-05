@@ -39,3 +39,12 @@ CREATE INDEX IF NOT EXISTS idx_participants_queue_joined
 
 ALTER TABLE queues ADD COLUMN IF NOT EXISTS current_participant_id TEXT;
 ALTER TABLE queues ADD COLUMN IF NOT EXISTS current_participant_name TEXT;
+
+-- История времени ожидания очередей
+CREATE TABLE IF NOT EXISTS queue_wait_stats (
+    id SERIAL PRIMARY KEY,
+    queue_id TEXT NOT NULL REFERENCES queues(id) ON DELETE CASCADE,
+    wait_time INT NOT NULL, -- фактическое время ожидания в минутах
+    participants_count INT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
