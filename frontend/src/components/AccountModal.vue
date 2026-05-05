@@ -1,7 +1,7 @@
 <template>
   <div class="account-modal" v-click-outside="() => $emit('close')">
     <div class="account-content">
-      <p class="account-name">{{ user.name }}</p>
+      <p class="account-name">{{ user.displayName }}</p>
       <p class="account-email">{{ user.email }}</p>
       <hr class="divider" />
       <button class="btn-logout" @click="$emit('logout')">Выйти из аккаунта</button>
