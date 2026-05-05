@@ -4,16 +4,18 @@
       <button class="modal-close" @click="$emit('close')">X</button>
       <h3>Регистрация аккаунта</h3>
 
-      <div class="input-group">
-        <input v-model="name" type="text" placeholder="Имя" class="modal-input" />
-        <input v-model="email" type="email" placeholder="Email" class="modal-input" />
-        <input v-model="password" type="password" placeholder="Пароль" class="modal-input" />
-      </div>
+      <form @submit.prevent="register">
+        <div class="input-group">
+          <input v-model="name" type="text" placeholder="Имя" class="modal-input" />
+          <input v-model="email" type="email" placeholder="Email" required class="modal-input" />
+          <input v-model="password" type="password" placeholder="Пароль" class="modal-input" />
+        </div>
 
-      <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
 
-      <button class="modal-btn" @click="register">Зарегистрироваться</button>
+        <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
 
+        <button class="modal-btn" @click="register">Зарегистрироваться</button>
+      </form>
       <p class="switch-text">Уже есть аккаунт?
         <a href="#" @click.prevent="$emit('switch-to-login')">Войти</a>
       </p>
