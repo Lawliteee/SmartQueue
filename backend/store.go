@@ -104,6 +104,15 @@ func (s *Store) Get(id string) (*Queue, bool) {
 	if queue.Participants == nil {
 		queue.Participants = []Participant{}
 	}
+	
+	var cpID, cpName sql.NullString
+	s.db.QueryRow(`
+		SELECT current_participant_id, current_participant_name 
+		FROM queues WHERE id = $1`, id,
+	).Scan(&cpID, &cpName)
+	if cpID.Valid && cpID.String != "" {
+		queue.CurrentParticipant = &Participant{ID: cpID.String, Name: cpName.String}
+	}
 
 	return queue, true
 }

@@ -211,25 +211,26 @@ func (h *Handler) CallNext(w http.ResponseWriter, r *http.Request) {
 
 	h.store.ShiftParticipant(id)
 
-	// Отправляем обновление всем, кто слушает WebSocket
-	if q, ok := h.store.Get(id); ok {
-		h.hub.Broadcast(id, map[string]interface{}{
-			"type": "queue_update",
-			"data": q,
-		})
-	}
+	// Получаем обновлённую очередь
+	updatedQueue, _ := h.store.Get(id)
 
-	queue, _ = h.store.Get(id)
+	// Отправляем обновление всем через WebSocket
+	h.hub.Broadcast(id, map[string]interface{}{
+		"type": "queue_update",
+		"data": updatedQueue,
+	})
 
 	type NextResponse struct {
-		CurrentNumber int           `json:"currentNumber"`
-		Participants  []Participant `json:"participants"`
+		CurrentNumber      int           `json:"currentNumber"`
+		Participants       []Participant `json:"participants"`
+		CurrentParticipant *Participant  `json:"currentParticipant"`
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(NextResponse{
-		CurrentNumber: queue.CurrentNumber,
-		Participants:  queue.Participants,
+		CurrentNumber:      updatedQueue.CurrentNumber,
+		Participants:       updatedQueue.Participants,
+		CurrentParticipant: updatedQueue.CurrentParticipant,
 	})
 }
 
