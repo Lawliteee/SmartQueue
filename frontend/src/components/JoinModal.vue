@@ -29,10 +29,10 @@ import axios from 'axios'
 const emit = defineEmits(['close'])
 const router = useRouter()
 
-const userName  = ref('')
-const queueId   = ref('')
-const loading   = ref(false)
-const errorMsg  = ref('')
+const userName = ref('')
+const queueId = ref('')
+const loading = ref(false)
+const errorMsg = ref('')
 
 // Проверяется возможность перехода в очередь (если поля заполнены)
 const canSubmit = computed(() =>
@@ -41,7 +41,7 @@ const canSubmit = computed(() =>
 
 onMounted(() => {
   const user = getUser()
-  if (user?.name) userName.value = user.name
+  if (user?.displayName) userName.value = user.displayName
 })
 
 // Переход в очередь

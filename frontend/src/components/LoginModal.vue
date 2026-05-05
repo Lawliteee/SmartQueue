@@ -9,6 +9,8 @@
         <input v-model="password" type="password" placeholder="Пароль" class="modal-input" />
       </div>
 
+      <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
+
       <button class="modal-btn" @click="login">Войти</button>
 
       <p class="hint">Если вы не помните пароль, то ничем не можем помочь</p>
@@ -23,22 +25,29 @@
 <script setup>
 import { ref } from 'vue'
 import { saveUser } from '../utils/auth.js'
+import axios from 'axios'
 
 const emit = defineEmits(['close', 'switch-to-register', 'logged-in'])
 
 const email = ref('')
 const password = ref('')
+const errorMsg = ref('')
 
-function login() {
-  // TODO:
-  // const res = await axios.post('/api/auth/login', { email, password })
-  // saveUser(res.data.user)
-  // emit('logged-in', res.data.user)
-
-  // Заглушка --
-  const user = { name: email.value.split('@')[0], email: email.value }
-  saveUser(user)
-  emit('logged-in', user)
+async function login() {
+  try {
+    const res = await axios.post('http://localhost:8080/api/auth/login', {
+      email: email.value,
+      password: password.value,
+    })
+    saveUser(res.data.user, res.data.token)
+    emit('logged-in', res.data.user)
+  } catch (err) {
+    if (err.response?.status === 401) {
+      errorMsg.value = 'Неверный чето там'
+    } else {
+      errorMsg.value = 'Ошибка входа'
+    }
+  }
 }
 </script>
 
@@ -162,5 +171,11 @@ h3 {
 
 .switch-text a:hover {
   text-decoration: underline;
+}
+
+.error-msg {
+  font-size: 13px;
+  color: #e85656;
+  margin-bottom: 12px;
 }
 </style>
