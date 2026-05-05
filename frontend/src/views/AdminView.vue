@@ -55,6 +55,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import axios from 'axios'
 import api from '../utils/api.js'
 import ChatModal from '../components/ChatModal.vue'
 
@@ -159,12 +160,14 @@ async function callNext() {
 
 // Удаляет участника очереди
 async function removeParticipant(participantId) {
-  await axios.delete(
-    `http://localhost:8080/api/queues/${route.params.id}/participants/${participantId}`
-  )
-
-  // Новый массив без удаленного участника
-  queue.value.participants = queue.value.participants.filter(p => p.id !== participantId)
+  try {
+    // Отправляем запрос на удаление
+    await axios.delete(
+      `http://localhost:8080/api/queues/${route.params.id}/participants/${participantId}`
+    )
+  } catch (error) {
+    console.error('Ошибка при удалении участника:', error)
+  }
 }
 
 // Завершаем очередь
