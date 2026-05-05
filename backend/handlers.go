@@ -104,17 +104,63 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Читаем текущего участника
+	// текущий участник
 	var currentParticipant *Participant
 	var cpID, cpName sql.NullString
+
 	h.store.db.QueryRow(`
 		SELECT current_participant_id, current_participant_name
-		FROM queues WHERE id = $1`, id,
-	).Scan(&cpID, &cpName)
+		FROM queues WHERE id = $1
+	`, id).Scan(&cpID, &cpName)
+
 	if cpID.Valid && cpID.String != "" {
-		currentParticipant = &Participant{ID: cpID.String, Name: cpName.String}
+		currentParticipant = &Participant{
+			ID:   cpID.String,
+			Name: cpName.String,
+		}
 	}
 
+	//  1. считаем среднее время
+	avgWait := float64(5)
+
+	rows, err := h.store.db.Query(`
+		SELECT wait_time FROM queue_wait_stats
+		WHERE queue_id = $1
+	`, id)
+
+	if err == nil {
+		defer rows.Close()
+
+		total := 0
+		count := 0
+
+		for rows.Next() {
+			var wt int
+			if err := rows.Scan(&wt); err == nil {
+				total += wt
+				count++
+			}
+		}
+
+		if count > 0 {
+			avgWait = float64(total) / float64(count)
+		}
+	}
+
+	//  2. ETA для каждого
+	etAs := make([]int, len(queue.Participants))
+
+	for i := range queue.Participants {
+		etAs[i] = int(avgWait * float64(i+1))
+	}
+
+	//  3. текущее ожидание
+	waitTime := 0
+	if len(etAs) > 0 {
+		waitTime = etAs[0]
+	}
+
+	//  4. ответ
 	type QueueInfo struct {
 		ID                 string        `json:"id"`
 		Name               string        `json:"name"`
@@ -123,12 +169,14 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 		Participants       []Participant `json:"participants"`
 		PeopleAhead        int           `json:"peopleAhead"`
 		WaitTime           int           `json:"waitTime"`
+		ETAs               []int         `json:"etAs"`
 		Finished           bool          `json:"finished"`
 		CurrentParticipant *Participant  `json:"currentParticipant"`
 		MaxParticipants    int           `json:"maxParticipants"`
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+
 	json.NewEncoder(w).Encode(QueueInfo{
 		ID:                 queue.ID,
 		Name:               queue.Name,
@@ -136,7 +184,8 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 		CurrentNumber:      queue.CurrentNumber,
 		Participants:       queue.Participants,
 		PeopleAhead:        len(queue.Participants),
-		WaitTime:           len(queue.Participants) * 5, // заглушка: 5 мин на человека
+		WaitTime:           waitTime,
+		ETAs:               etAs,
 		Finished:           queue.Finished,
 		CurrentParticipant: currentParticipant,
 		MaxParticipants:    queue.MaxParticipants,

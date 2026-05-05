@@ -127,34 +127,60 @@ func (s *Store) RemoveParticipant(queueID, participantID string) {
 
 // ShiftParticipant удаляет первого участника (FIFO) и увеличивает счётчик.
 func (s *Store) ShiftParticipant(queueID string) {
-    tx, err := s.db.Begin()
-    if err != nil { return }
-    defer tx.Rollback()
+	tx, err := s.db.Begin()
+	if err != nil {
+		return
+	}
+	defer tx.Rollback()
 
-    // Запоминаем первого участника как текущего
-    var pID, pName string
-    tx.QueryRow(`
-        SELECT id, name FROM participants
-        WHERE queue_id = $1 ORDER BY joined_at ASC LIMIT 1
-    `, queueID).Scan(&pID, &pName)
+	// 1. Берём первого участника + время входа
+	var pID, pName string
+	var joinedAt time.Time
 
-    // Удаляем его из очереди ожидания
-    tx.Exec(`
-        DELETE FROM participants WHERE id = (
-            SELECT id FROM participants
-            WHERE queue_id = $1 ORDER BY joined_at ASC LIMIT 1
-        )`, queueID)
+	err = tx.QueryRow(`
+		SELECT id, name, joined_at
+		FROM participants
+		WHERE queue_id = $1
+		ORDER BY joined_at ASC
+		LIMIT 1
+	`, queueID).Scan(&pID, &pName, &joinedAt)
 
-    // Сохраняем как текущего и увеличиваем счётчик
-    tx.Exec(`
-        UPDATE queues
-        SET current_number = current_number + 1,
-            current_participant_id = $2,
-            current_participant_name = $3
-        WHERE id = $1
-    `, queueID, pID, pName)
+	if err != nil {
+		return
+	}
 
-    tx.Commit()
+	// 2. Считаем РЕАЛЬНОЕ время ожидания (в минутах)
+	now := time.Now()
+	waitMinutes := int(now.Sub(joinedAt).Minutes())
+
+	// 3. Считаем сколько людей было перед ним
+	var count int
+	tx.QueryRow(`
+		SELECT COUNT(*) FROM participants WHERE queue_id = $1
+	`, queueID).Scan(&count)
+
+	// 4. Удаляем из очереди
+	tx.Exec(`
+		DELETE FROM participants WHERE id = $1
+	`, pID)
+
+	// 5. Обновляем очередь
+	tx.Exec(`
+		UPDATE queues
+		SET current_number = current_number + 1,
+			current_participant_id = $2,
+			current_participant_name = $3,
+			last_served_at = NOW()
+		WHERE id = $1
+	`, queueID, pID, pName)
+
+	// 6. Сохраняем реальное наблюдение
+	tx.Exec(`
+		INSERT INTO queue_wait_stats (queue_id, wait_time, participants_count)
+		VALUES ($1, $2, $3)
+	`, queueID, waitMinutes, count)
+
+	tx.Commit()
 }
 
 // FinishQueue помечает очередь как завершённую.

@@ -16,7 +16,13 @@
     <section class="content">
       <p v-if="waitTime === -1" class="your-turn">Ваша очередь!</p>
       <p v-else-if="currentNumber === 0" class="wait-time">Очередь ещё не началась</p>
-      <p v-else class="wait-time">Осталось ждать: {{ waitTime }} мин.</p>
+      <p v-else-if="waitTime > 0" class="wait-time">
+          Осталось ждать: {{ waitTime }} мин.
+        </p>
+
+        <p v-else class="wait-time">
+          Ожидание рассчитывается...
+        </p>
       <p v-if="currentNumber > 0" class="ahead-count">Перед вами: {{ peopleAhead }} чел.</p>
       <p v-else class="ahead-count" style="visibility: hidden">placeholder</p>
       <div class="btn-row">
@@ -95,6 +101,9 @@ async function fetchQueue() {
   try {
     const response = await axios.get(`http://localhost:8080/api/queues/${queueId}`)
     const data = response.data
+    console.log("FULL DATA:", data)
+    console.log("ETAS:", data.etAs)
+    console.log("IS ARRAY:", Array.isArray(data.etAs))
 
     participants.value = data.participants || [] // Получаем участников очереди
     currentNumber.value = data.currentNumber ?? 0
@@ -127,7 +136,11 @@ async function fetchQueue() {
     }
     queueTitle.value = data.name
     peopleAhead.value = myPos === -1 ? 0 : myPos
-    waitTime.value = myPos === -1 ? 0 : myPos * 5
+    if (myPos === -1) {
+      waitTime.value = null
+    } else {
+      waitTime.value = data.etAs?.[myPos] ?? null
+    }
   } catch (error) {
     clearInterval(pollTimer)
     router.push('/')
