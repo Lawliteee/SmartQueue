@@ -48,3 +48,6 @@ CREATE TABLE IF NOT EXISTS queue_wait_stats (
     participants_count INT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE queues
+ADD COLUMN IF NOT EXISTS last_served_at TIMESTAMPTZ;
