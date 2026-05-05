@@ -1,6 +1,11 @@
 <template>
   <div class="admin-page">
 
+    <!-- Кнопка чата -->
+    <button class="chat-btn" @click="showChat = true" title="Чат">
+      <img src="/icons/chat.png" alt="чат" width="30" height="30" />
+    </button>
+
     <!-- Верхняя панель -->
     <div class="queue-bar">
       <span class="queue-name">{{ queue.name }}</span>
@@ -11,49 +16,53 @@
     </div>
 
     <!-- Текущий участник -->
-    <div class="current-block" v-if="queue.currentNumber !== null">
+    <div class="current-block" :class="{ 'current-block-ns': notStarted }">
       <div class="current-label">
-        <span class="current-text">Текущий участник:</span>
-        <span class="current-number">#{{ queue.currentNumber }}</span>
+        <span class="current-text">{{ notStarted ? 'Следующий:' : 'Текущий участник:' }}</span>
+        <span class="current-number" v-if="!notStarted">#{{ queue.currentNumber }}</span>
       </div>
       <div class="current-participant-info">
-        <span class="participant-name">{{ currentParticipant?.name ?? '—' }}</span>
-        <span class="participant-priority">Приоритет {{ currentParticipant?.priority ?? '-' }}</span>
+        <span class="participant-name">{{ displayedParticipant?.name ?? '—' }}</span>
+        <span class="participant-priority">Приоритет {{ displayedParticipant?.priority ?? '-' }}</span>
       </div>
     </div>
 
     <!-- Список участников -->
-    <div class="participants-panel">
-      <div
-        v-for="(p, idx) in queue.participants"
-        :key="p.id"
-        class="participant-row"
-        :class="{ 'participant-row--first': idx === 0 }"
-      >
+    <div class="participants-panel":class="{ 'participants-panel-ns': notStarted }">
+      <div v-for="(p, idx) in displayedParticipants" :key="p.id" class="participant-row" :class="{ 'participant-row--first': idx === 0 }">
         <span class="p-number">{{ idx + 1 }}.</span>
         <span class="p-name">{{ p.name }}</span>
+        <button v-if="idx !== 0"
+          class="btn-remove" @click="removeParticipant(p.id)"
+          title="Исключить">Х</button>
       </div>
-      <div v-if="queue.participants.length === 0" class="empty-list">
-        Участников пока нет
-      </div>
+     <div v-if="displayedParticipants.length === 0" class="empty-list">Участников пока нет</div>
     </div>
 
     <!-- кнопки внизу -->
     <div class="actions">
       <button class="btn-secondary">Открыть чат</button>
-      <button class="btn-next" @click="callNext">Позвать следующего</button>
+      <button class="btn-next" @click="callNext">
+        {{ notStarted ? 'Начать очередь' : 'Позвать следующего' }}
+      </button>
       <button class="btn-secondary" @click="finishQueue">Завершить очередь</button>
     </div>
   </div>
 
+  <ChatModal v-if="showChat" @close="showChat = false" />
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
+import ChatModal from '../components/ChatModal.vue'
 
 let pollTimer = null
+
+const showChat = ref(false)
+
+const notStarted = computed(() => queue.value.currentNumber === 0)
 
 const route = useRoute()
 const router = useRouter()
@@ -66,7 +75,19 @@ const queue = ref({
   participants: []
 })
 
-const currentParticipant = computed(() => queue.value.currentParticipant ?? null)
+// Участник для отображения
+const displayedParticipant = computed(() =>
+  queue.value.currentParticipant ?? queue.value.participants[0] ?? null
+)
+
+// Список для отображения
+const displayedParticipants = computed(() => {
+  const cp = queue.value.currentParticipant
+  if (!cp) {
+    return queue.value.participants
+  }
+  return [cp, ...queue.value.participants] // Список с текущим и последующими участниками
+})
 
 onMounted(async () => {
   await fetchQueue()
@@ -93,7 +114,7 @@ async function fetchQueue() {
   }
 }
 
-const copied = ref(false) 
+const copied = ref(false)
 function copyId() {
   if (queue.value.id) {
     navigator.clipboard.writeText(queue.value.id)
@@ -108,6 +129,16 @@ async function callNext() {
   queue.value.currentNumber = response.data.currentNumber
   queue.value.participants = response.data.participants
   queue.value.currentParticipant = response.data.currentParticipant ?? null
+}
+
+// Удаляет участника очереди
+async function removeParticipant(participantId) {
+  await axios.delete(
+    `http://localhost:8080/api/queues/${route.params.id}/participants/${participantId}`
+  )
+
+  // Новый массив без удаленного участника
+  queue.value.participants = queue.value.participants.filter(p => p.id !== participantId)
 }
 
 // Завершаем очередь
@@ -131,7 +162,27 @@ async function finishQueue() {
   height: 100vh;
   max-height: 100vh;
   overflow: hidden;
+  position: relative;
 }
+
+/* Кнопка чата */
+.chat-btn {
+  position: fixed;
+  top: 90px;
+  left: 20px;
+  width: 46px;
+  height: 46px;
+  background: var(--panel);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.20s;
+  z-index: 10;
+}
+.chat-btn:hover { background: #cfcfcf; }
 
 .queue-bar {
   display: flex;
@@ -178,8 +229,8 @@ async function finishQueue() {
   text-align: center;
 }
 
-.btn-copy--copied:hover { 
-  background: var(--teal); 
+.btn-copy--copied:hover {
+  background: var(--teal);
 }
 
 .btn-text {
@@ -323,5 +374,28 @@ async function finishQueue() {
 
 .btn-next:hover {
   background: var(--teal);
+}
+
+.participants-panel-ns { opacity: 0.4; }
+
+.current-block-ns { opacity: 0.4; }
+
+
+/* Кнопка удаления участника */
+.btn-remove {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  line-height: 1;
+  transition: color 0.20s;
+}
+
+.btn-remove:hover {
+  color: var(--text);
 }
 </style>

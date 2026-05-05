@@ -1,0 +1,105 @@
+<template>
+  <div class="swap-modal">
+    <div class="swap-content">
+      <div class="swap-header">
+        <h3>Обмен отклонён</h3>
+        <button class="btn-close" @click="$emit('confirm')">Х</button>
+      </div>
+      <p class="swap-text">{{ fromName }} отказал в обмене местами</p>
+      <div class="swap-actions">
+        <button class="btn-ok" @click="$emit('confirm')">Ок</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+defineProps({ fromName: { type: String, default: '' } })
+defineEmits(['confirm'])
+</script>
+
+<style scoped>
+.swap-modal {
+  position: fixed;
+  bottom: 32px;
+  left: 24px;
+  z-index: 20;
+  pointer-events: auto;
+  animation: slideInLeft 0.25s ease-out;
+}
+
+.swap-content {
+  background: white;
+  border-radius: 18px;
+  width: 280px;
+  box-sizing: border-box;
+  border: 1px solid var(--divider);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+
+.swap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--divider);
+}
+
+h3 {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text);
+  margin: 0;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0;
+  line-height: 1;
+}
+
+.btn-close:hover { color: var(--text); }
+
+.swap-text {
+  font-size: 14px;
+  padding: 14px 20px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.swap-actions {
+  padding: 0 20px 16px;
+  text-align: center;
+}
+
+.btn-ok {
+  width: 50%;
+  background: var(--panel);
+  color: var(--text);
+  border: none;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  transition: background 0.20s;
+}
+
+.btn-ok:hover { background: #cfcfcf; }
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-110%);
+     opacity: 0;
+  } to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+</style>
