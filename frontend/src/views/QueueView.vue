@@ -59,8 +59,6 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 
-let pollTimer = null
-
 const showFinished = ref(false)
 const showKicked = ref(false)
 const showChat = ref(false)
@@ -83,55 +81,79 @@ const peopleAhead = ref(0)
 const currentNumber = ref(0)
 const currentParticipant = ref(null)
 
+let ws = null
 onMounted(async () => {
-  await fetchQueue() // загружаем данные
-  pollTimer = setInterval(fetchQueue, 1500) // устанавливаем таймер на 1,5 секунды
+  await fetchQueue()   // первичная загрузка через HTTP
+  connectWS()
 })
 
-onUnmounted(() => {clearInterval(pollTimer); window.removeEventListener('keydown', onKeydown) }) // останавливаем таймер при уходе со страницы
+onUnmounted(() => {
+  ws?.close()
+  window.removeEventListener('keydown', onKeydown)
+})
+
+function connectWS() {
+  const queueId = route.params.id
+  ws = new WebSocket(`ws://localhost:8080/api/ws/queue/${queueId}`)
+
+  ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data)
+    if (msg.type === 'queue_update') {
+      handleUpdate(msg.data)
+    }
+  }
+
+  ws.onclose = () => {
+    setTimeout(connectWS, 2000) // переподключение через 2 секунды если разорвалось
+  }
+
+  ws.onerror = (err) => { console.error('WebSocket error:', err) }
+}
 
 async function fetchQueue() {
   const queueId = route.params.id
   try {
     const response = await axios.get(`http://localhost:8080/api/queues/${queueId}`)
-    const data = response.data
-
-    participants.value = data.participants || [] // Получаем участников очереди
-    currentNumber.value = data.currentNumber ?? 0
-    currentParticipant.value = data.currentParticipant ?? null
-
-    if (data.finished) {
-      showFinished.value = true
-      return
-    }
-
-    const myId = getCookie('participantId')
-    const cp = data.currentParticipant
-
-    // Если текущий вызванный - я
-    if (cp && cp.id === myId) {
-      queueTitle.value = data.name
-      waitTime.value = -1 // флаг "вызван"
-      peopleAhead.value = 0
-      return
-    }
-
-    // Моя позиция в очереди ожидания
-    const myPos = data.participants.findIndex((p) => p.id === myId)
-
-    if (myPos === -1) { // если нет в очереди значит выгнали
-      removeCookie('participantId')
-      clearInterval(pollTimer)
-      showKicked.value = true
-      return
-    }
-    queueTitle.value = data.name
-    peopleAhead.value = myPos === -1 ? 0 : myPos
-    waitTime.value = myPos === -1 ? 0 : myPos * 5
+    handleUpdate(response.data)
   } catch (error) {
-    clearInterval(pollTimer)
     router.push('/')
   }
+}
+
+function handleUpdate(data) {
+  participants.value = data.participants || []
+  currentNumber.value = data.currentNumber ?? 0
+  currentParticipant.value = data.currentParticipant ?? null
+
+  if (data.finished) {
+    ws?.close()
+    showFinished.value = true
+    return
+  }
+
+  const myId = getCookie('participantId')
+  const cp = data.currentParticipant
+
+  if (cp && cp.id === myId) {  // если нет в очереди значит выгнали
+    queueTitle.value = data.name
+    waitTime.value = -1 // флаг "вызван"
+    peopleAhead.value = 0
+    return
+  }
+
+  // Моя позиция в очереди
+  const myPos = data.participants.findIndex(p => p.id === myId)
+
+  if (myPos === -1) { // Если текущий вызванный - я
+    removeCookie('participantId')
+    ws?.close()
+    showKicked.value = true
+    return
+  }
+
+  queueTitle.value = data.name
+  peopleAhead.value = myPos
+  waitTime.value = myPos * 5
 }
 
 async function leaveQueue() {
