@@ -18,23 +18,28 @@ func main() {
 	handler := NewHandler(store)
 
 	r := mux.NewRouter()
-
 	api := r.PathPrefix("/api").Subrouter()
 
-	// Очереди
+	// ── Аутентификация (публичные) ──────────────────────────
+	api.HandleFunc("/auth/register", handler.Register).Methods("POST")
+	api.HandleFunc("/auth/login", handler.Login).Methods("POST")
+
+	// ── Очереди (публичные) ─────────────────────────────────
 	api.HandleFunc("/queues", handler.CreateQueue).Methods("POST")
 	api.HandleFunc("/queues/{id}", handler.GetQueue).Methods("GET")
 	api.HandleFunc("/queues/{id}/join", handler.JoinQueue).Methods("POST")
 	api.HandleFunc("/queues/{id}/participants/{participantId}", handler.LeaveQueue).Methods("DELETE")
 
-	// Админ
-	api.HandleFunc("/admin/queues/{id}/next", handler.CallNext).Methods("POST")
-	api.HandleFunc("/admin/queues/{id}/finish", handler.FinishQueue).Methods("POST")
+	// ── Административные (только для авторизованных) ────────
+	admin := api.PathPrefix("/admin").Subrouter()
+	admin.Use(AuthMiddleware)
+	admin.HandleFunc("/queues/{id}/next", handler.CallNext).Methods("POST")
+	admin.HandleFunc("/queues/{id}/finish", handler.FinishQueue).Methods("POST")
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5173"},
-		AllowedMethods: []string{"GET", "POST", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Content-Type"},
+		AllowedMethods:   []string{"GET", "POST", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
 	})
 
