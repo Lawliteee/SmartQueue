@@ -41,7 +41,6 @@
 
     <!-- кнопки внизу -->
     <div class="actions">
-      <button class="btn-secondary">Открыть чат</button>
       <button class="btn-next" @click="callNext">
         {{ notStarted ? 'Начать очередь' : 'Позвать следующего' }}
       </button>
@@ -364,12 +363,14 @@ async function finishQueue() {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  position: relative;
   flex-shrink: 0;
   margin-top: auto;
 }
 
 .btn-secondary {
+  position: absolute;
+  right: 0;
   background: var(--panel);
   color: var(--text);
   border: none;
