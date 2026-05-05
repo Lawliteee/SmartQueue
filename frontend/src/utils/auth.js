@@ -2,7 +2,7 @@ import { getCookie, setCookie, removeCookie } from './cookies.js'
 
 export function getUser() {
   const raw = getCookie('user') // Получаем куки с пользователем
-  if (!raw) {
+  if (!raw) { // Если пустая возвращаем тгдд
     return null
   }
 
@@ -12,7 +12,7 @@ export function getUser() {
 }
 
 export function saveUser(user, token) {
-  setCookie('user', JSON.stringify(user), 30) // Сохраняем в куки на 30 дней
+  setCookie('user', JSON.stringify(user), 30) // Сохраняем объект юзера в куки на 30 дней
   setCookie('token', token, 3) // токен на 3 дня
 }
 
