@@ -15,7 +15,8 @@ func main() {
 	RunMigrations(db)
 
 	store := NewStore(db)
-	handler := NewHandler(store)
+	hub := NewHub()                   // <-- создаём хаб
+	handler := NewHandler(store, hub) // <-- передаём хаб
 
 	r := mux.NewRouter()
 	api := r.PathPrefix("/api").Subrouter()
@@ -29,6 +30,9 @@ func main() {
 	api.HandleFunc("/queues/{id}", handler.GetQueue).Methods("GET")
 	api.HandleFunc("/queues/{id}/join", handler.JoinQueue).Methods("POST")
 	api.HandleFunc("/queues/{id}/participants/{participantId}", handler.LeaveQueue).Methods("DELETE")
+
+	// ── WebSocket для live‑обновлений ───────────────────────
+	api.HandleFunc("/ws/queue/{id}", handler.HandleWebSocket).Methods("GET") // <-- новый маршрут
 
 	// ── Административные (только для авторизованных) ────────
 	admin := api.PathPrefix("/admin").Subrouter()

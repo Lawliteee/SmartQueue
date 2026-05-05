@@ -1,0 +1,70 @@
+package main
+
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+	"sync"
+
+	"github.com/gorilla/websocket"
+)
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool { return true }, // для разработки
+}
+
+// Hub управляет всеми WebSocket-соединениями по очереди.
+type Hub struct {
+	// rooms: queueID → множество активных соединений
+	rooms map[string]map[*websocket.Conn]bool
+	mu    sync.RWMutex
+}
+
+// NewHub создаёт новый Hub.
+func NewHub() *Hub {
+	return &Hub{
+		rooms: make(map[string]map[*websocket.Conn]bool),
+	}
+}
+
+// Subscribe добавляет соединение в комнату очереди.
+func (h *Hub) Subscribe(queueID string, conn *websocket.Conn) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if _, ok := h.rooms[queueID]; !ok {
+		h.rooms[queueID] = make(map[*websocket.Conn]bool)
+	}
+	h.rooms[queueID][conn] = true
+	log.Printf("WebSocket подключён к очереди %s (всего соединений: %d)", queueID, len(h.rooms[queueID]))
+}
+
+// Unsubscribe удаляет соединение из комнаты.
+func (h *Hub) Unsubscribe(queueID string, conn *websocket.Conn) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if clients, ok := h.rooms[queueID]; ok {
+		delete(clients, conn)
+		if len(clients) == 0 {
+			delete(h.rooms, queueID)
+		}
+	}
+	log.Printf("WebSocket отключён от очереди %s", queueID)
+}
+
+// Broadcast отправляет JSON-сообщение всем клиентам в комнате очереди.
+func (h *Hub) Broadcast(queueID string, message interface{}) {
+	data, err := json.Marshal(message)
+	if err != nil {
+		log.Printf("Broadcast marshal error: %v", err)
+		return
+	}
+
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	for conn := range h.rooms[queueID] {
+		if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
+			log.Printf("WebSocket write error: %v", err)
+			conn.Close()
+		}
+	}
+}
