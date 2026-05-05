@@ -12,10 +12,6 @@
 
       <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
 
-      <label class="checkbox-label">
-        <input v-model="agreed" type="checkbox" class="checkbox" />
-        <span>Согласен с пользовательским соглашением</span>
-      </label>
       <button class="modal-btn" @click="register">Зарегистрироваться</button>
 
       <p class="switch-text">Уже есть аккаунт?
@@ -137,25 +133,6 @@ h3 {
 
 .modal-input::placeholder {
   color: #aaa;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-bottom: 22px;
-  cursor: pointer;
-  text-align: left;
-}
-
-.checkbox {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  accent-color: var(--teal-dark);
-  cursor: pointer;
 }
 
 .modal-btn {
