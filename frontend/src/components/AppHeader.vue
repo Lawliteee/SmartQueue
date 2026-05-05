@@ -5,44 +5,86 @@
     </router-link>
     <span class="header-title">Smart Queue</span>
     <nav class="header-nav">
-      <a href="#" @click="openLogin">Войти</a>
-      <a href="#" @click="openRegister">Зарегистрироваться</a>
+
+      <!-- Незалогинен -->
+      <template v-if="!currentUser">
+        <a href="#" @click.prevent="openLogin">Войти</a>
+        <a href="#" @click.prevent="openRegister">Зарегистрироваться</a>
+      </template>
+
+      <!-- Залогинен -->
+      <div v-else class="avatar-wrap" ref="avatarRef">
+        <button class="avatar-btn" @click="accountOpen = !accountOpen">
+          <img src="/icons/avatar.png" alt="аккаунт" width="36" height="36" />
+        </button>
+        <AccountModal v-if="accountOpen":user="currentUser" @close="accountOpen = false" @logout="logout"/>
+      </div>
+
     </nav>
   </header>
 
   <LoginModal
-    v-if="loginOpen"
-    @close="loginOpen = false"
-    @switch-to-register="switchToRegister"
+    v-if="loginOpen" @close="loginOpen = false"
+    @switch-to-register="switchToRegister" @logged-in="onAuth"
   />
- 
   <RegisterModal
-    v-if="registerOpen"
-    @close="registerOpen = false"
-    @switch-to-login="switchToLogin"
+    v-if="registerOpen" @close="registerOpen = false"
+    @switch-to-login="switchToLogin" @registered="onAuth"
   />
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import LoginModal from './LoginModal.vue'
 import RegisterModal from './RegisterModal.vue'
- 
+import AccountModal from './AccountModal.vue'
+import { getUser, clearUser } from '../utils/auth.js'
+
 const loginOpen = ref(false)
 const registerOpen = ref(false)
- 
+const accountOpen = ref(false)
+const currentUser = ref(null)
+const avatarRef = ref(null)
+
+onMounted(() => {
+  currentUser.value = getUser() // Получаем из куки
+  document.addEventListener('click', onClickOutside) // Подписываемся на клики
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onClickOutside)  // Отписываемся от кликов
+})
+
+function onClickOutside(e) {
+  if (avatarRef.value && !avatarRef.value.contains(e.target)) {
+    accountOpen.value = false
+  }
+}
+
+function onAuth(user) {
+  currentUser.value = user
+  loginOpen.value = false
+  registerOpen.value = false
+}
+
+function logout() {
+  clearUser()
+  currentUser.value = null
+  accountOpen.value = false
+}
+
 // Открываем модальное окно Логина
 function openLogin() {
   loginOpen.value = true
   registerOpen.value = false
-} 
+}
 
 // Открываем модальное окно Регистрации
 function openRegister() {
   registerOpen.value = true
   loginOpen.value = false
 }
- 
+
 // Переключаемся с Логина на Регистрацию
 function switchToRegister() {
   loginOpen.value = false
@@ -91,11 +133,13 @@ header {
   left: 50%;
   transform: translateX(-50%);
 }
+
 .header-nav {
   display: flex;
   gap: 20px;
   z-index: 1;
 }
+
 .header-nav a {
   color: white;
   text-decoration: none;
@@ -103,7 +147,21 @@ header {
   font-weight: 500;
   opacity: 0.95;
 }
-.header-nav a:hover {
-  opacity: 0.7;
+
+.header-nav a:hover { opacity: 0.7; }
+
+/* Аватарка */
+.avatar-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  border-radius: 50%;
+  overflow: hidden;
+  transition: opacity 0.20s;
 }
+
+.avatar-btn:hover { opacity: 0.9; }
 </style>

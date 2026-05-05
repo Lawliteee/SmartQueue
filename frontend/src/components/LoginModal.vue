@@ -9,7 +9,7 @@
         <input v-model="password" type="password" placeholder="Пароль" class="modal-input" />
       </div>
 
-      <button class="modal-btn">Войти</button>
+      <button class="modal-btn" @click="login">Войти</button>
 
       <p class="hint">Если вы не помните пароль, то ничем не можем помочь</p>
 
@@ -22,11 +22,24 @@
 
 <script setup>
 import { ref } from 'vue'
+import { saveUser } from '../utils/auth.js'
 
-defineEmits(['close', 'switch-to-register'])
+const emit = defineEmits(['close', 'switch-to-register', 'logged-in'])
 
 const email = ref('')
 const password = ref('')
+
+function login() {
+  // TODO:
+  // const res = await axios.post('/api/auth/login', { email, password })
+  // saveUser(res.data.user)
+  // emit('logged-in', res.data.user)
+
+  // Заглушка --
+  const user = { name: email.value.split('@')[0], email: email.value }
+  saveUser(user)
+  emit('logged-in', user)
+}
 </script>
 
 <style scoped>

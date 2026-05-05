@@ -14,7 +14,7 @@
         <input v-model="agreed" type="checkbox" class="checkbox" />
         <span>Согласен с пользовательским соглашением</span>
       </label>
-      <button class="modal-btn">Зарегистрироваться</button>
+      <button class="modal-btn" @click="register">Зарегистрироваться</button>
 
       <p class="switch-text">Уже есть аккаунт?
         <a href="#" @click.prevent="$emit('switch-to-login')">Войти</a>
@@ -25,13 +25,26 @@
 
 <script setup>
 import { ref } from 'vue'
+import { saveUser } from '../utils/auth.js'
 
-defineEmits(['close', 'switch-to-login'])
+const emit = defineEmits(['close', 'switch-to-login', 'registered'])
 
 const name = ref('')
 const email = ref('')
 const password = ref('')
 const agreed = ref(false)
+
+function register() {
+  // TODO
+  // const res = await axios.post('/api/auth/register', { name, email, password })
+  // saveUser(res.data.user)
+  // emit('registered', res.data.user)
+
+  // Заглушка
+  const user = { name: name.value, email: email.value }
+  saveUser(user)
+  emit('registered', user)
+}
 </script>
 
 <style scoped>

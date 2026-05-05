@@ -21,34 +21,40 @@
 
 <script setup>
 import { setCookie } from '../utils/cookies.js'
-import { ref, computed } from 'vue'
+import { getUser } from '../utils/auth.js'
+import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
- 
+
 const emit = defineEmits(['close'])
 const router = useRouter()
- 
+
 const userName  = ref('')
 const queueId   = ref('')
 const loading   = ref(false)
 const errorMsg  = ref('')
- 
+
 // Проверяется возможность перехода в очередь (если поля заполнены)
 const canSubmit = computed(() =>
   userName.value.trim() !== '' && queueId.value.trim() !== ''
 )
 
+onMounted(() => {
+  const user = getUser()
+  if (user?.name) userName.value = user.name
+})
+
 // Переход в очередь
 async function submitQueue() {
   if (!canSubmit.value || loading.value) return
- 
+
   // Если вставили полную ссылку - извлекаем ID
   const raw = queueId.value.trim()
   const id  = raw.includes('/') ? raw.split('/').filter(Boolean).pop() : raw
- 
+
   loading.value  = true
   errorMsg.value = ''
- 
+
 try {
   // Сначала проверяем статус очереди
   const check = await axios.get(`http://localhost:8080/api/queues/${id}`)
@@ -100,7 +106,7 @@ try {
   justify-content: center;
   z-index: 10;
 }
- 
+
 .modal-content {
   background: white;
   padding: 35px;
@@ -110,21 +116,21 @@ try {
   text-align: center;
   box-sizing: border-box;
 }
- 
+
 .modal-content h3 {
   font-size: 21px;
   font-weight: 400;
   margin-bottom: 18px;
   color: var(--text);
 }
- 
+
 .input-group {
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin-bottom: 28px;
 }
- 
+
 .modal-input {
   width: 100%;
   padding: 14px;
@@ -136,20 +142,20 @@ try {
   box-sizing: border-box;
   transition: border-color 0.18s;
 }
- 
+
 .modal-input::placeholder { color: #aaa; }
- 
+
 .modal-input:focus {
   outline: none;
   border-color: var(--teal-dark);
 }
- 
+
 .error-msg {
   font-size: 13px;
   color: #e85656;
   margin-bottom: 14px;
 }
- 
+
 .modal-btn {
   background: var(--teal-dark);
   color: white;
@@ -163,11 +169,11 @@ try {
   cursor: pointer;
   transition: background 0.20s, opacity 0.20s;
 }
- 
+
 .modal-btn:hover:not(.modal-btn--disabled) {
   background: var(--teal);
 }
- 
+
 .modal-btn--disabled {
   opacity: 0.45;
   cursor: not-allowed;
