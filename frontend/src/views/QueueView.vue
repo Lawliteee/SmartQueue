@@ -16,7 +16,13 @@
     <section class="content">
       <p v-if="waitTime === -1" class="your-turn">Ваша очередь!</p>
       <p v-else-if="currentNumber === 0" class="wait-time">Очередь ещё не началась</p>
-      <p v-else class="wait-time">Осталось ждать: {{ waitTime }} мин.</p>
+      <p v-else-if="waitTime > 0" class="wait-time">
+          Осталось ждать: {{ waitTime }} мин.
+        </p>
+
+        <p v-else class="wait-time">
+          Ожидание рассчитывается...
+        </p>
       <p v-if="currentNumber > 0" class="ahead-count">Перед вами: {{ peopleAhead }} чел.</p>
       <p v-else class="ahead-count" style="visibility: hidden">placeholder</p>
       <div class="btn-row">
@@ -153,7 +159,11 @@ function handleUpdate(data) {
 
   queueTitle.value = data.name
   peopleAhead.value = myPos
-  waitTime.value = myPos * 5
+  if (myPos === -1) {
+    waitTime.value = null
+  } else {
+    waitTime.value = data.etAs?.[myPos] ?? null
+  }
 }
 
 async function leaveQueue() {
