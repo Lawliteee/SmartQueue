@@ -4,20 +4,18 @@
       <button class="modal-close" @click="$emit('close')">X</button>
       <h3>Регистрация аккаунта</h3>
 
-      <div class="input-group">
-        <input v-model="name" type="text" placeholder="Имя" class="modal-input" />
-        <input v-model="email" type="email" placeholder="Email" class="modal-input" />
-        <input v-model="password" type="password" placeholder="Пароль" class="modal-input" />
-      </div>
+      <form @submit.prevent="register">
+        <div class="input-group">
+          <input v-model="name" type="text" placeholder="Имя" class="modal-input" />
+          <input v-model="email" type="email" placeholder="Email" required class="modal-input" />
+          <input v-model="password" type="password" placeholder="Пароль" class="modal-input" />
+        </div>
 
-      <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
 
-      <label class="checkbox-label">
-        <input v-model="agreed" type="checkbox" class="checkbox" />
-        <span>Согласен с пользовательским соглашением</span>
-      </label>
-      <button class="modal-btn" @click="register">Зарегистрироваться</button>
+        <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
 
+        <button class="modal-btn" @click="register">Зарегистрироваться</button>
+      </form>
       <p class="switch-text">Уже есть аккаунт?
         <a href="#" @click.prevent="$emit('switch-to-login')">Войти</a>
       </p>
@@ -137,25 +135,6 @@ h3 {
 
 .modal-input::placeholder {
   color: #aaa;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-bottom: 22px;
-  cursor: pointer;
-  text-align: left;
-}
-
-.checkbox {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  accent-color: var(--teal-dark);
-  cursor: pointer;
 }
 
 .modal-btn {

@@ -41,7 +41,6 @@
 
     <!-- кнопки внизу -->
     <div class="actions">
-      <button class="btn-secondary">Открыть чат</button>
       <button class="btn-next" @click="callNext">
         {{ notStarted ? 'Начать очередь' : 'Позвать следующего' }}
       </button>
@@ -55,10 +54,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import axios from 'axios'
 import api from '../utils/api.js'
 import ChatModal from '../components/ChatModal.vue'
-
-let pollTimer = null
 
 const showChat = ref(false)
 
@@ -89,12 +87,40 @@ const displayedParticipants = computed(() => {
   return [cp, ...queue.value.participants] // Список с текущим и последующими участниками
 })
 
+let ws = null
+
 onMounted(async () => {
   await fetchQueue()
-  pollTimer = setInterval(fetchQueue, 1200)
+  connectWS()
 })
 
-onUnmounted(() => clearInterval(pollTimer))
+onUnmounted(() => {
+  ws?.close()
+})
+
+function connectWS() {
+  const queueId = route.params.id
+  ws = new WebSocket(`ws://localhost:8080/api/ws/queue/${queueId}`)
+
+  ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data)
+    if (msg.type === 'queue_update') {
+      const data = msg.data
+      queue.value = {
+        id: data.id,
+        name: data.name,
+        startTime: data.startTime || '12:00',
+        currentNumber: data.currentNumber ?? 0,
+        participants: data.participants || [],
+        currentParticipant: data.currentParticipant || null,
+      }
+    }
+  }
+
+  ws.onclose = () => {
+    setTimeout(connectWS, 2000)
+  }
+}
 
 async function fetchQueue() {
   const queueId = route.params.id
@@ -133,12 +159,14 @@ async function callNext() {
 
 // Удаляет участника очереди
 async function removeParticipant(participantId) {
-  await axios.delete(
-    `http://localhost:8080/api/queues/${route.params.id}/participants/${participantId}`
-  )
-
-  // Новый массив без удаленного участника
-  queue.value.participants = queue.value.participants.filter(p => p.id !== participantId)
+  try {
+    // Отправляем запрос на удаление
+    await axios.delete(
+      `http://localhost:8080/api/queues/${route.params.id}/participants/${participantId}`
+    )
+  } catch (error) {
+    console.error('Ошибка при удалении участника:', error)
+  }
 }
 
 // Завершаем очередь
@@ -335,12 +363,14 @@ async function finishQueue() {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  position: relative;
   flex-shrink: 0;
   margin-top: auto;
 }
 
 .btn-secondary {
+  position: absolute;
+  right: 0;
   background: var(--panel);
   color: var(--text);
   border: none;
