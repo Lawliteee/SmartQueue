@@ -14,16 +14,18 @@ import (
 type Handler struct {
 	store *Store
 	hub   *Hub // WebSocket хаб
+	swaps *SwapStore
 }
 
 func NewHandler(store *Store, hub *Hub) *Handler {
-	return &Handler{store: store, hub: hub}
+	return &Handler{store: store, hub: hub, swaps: NewSwapStore()}
 }
 
 // HandleWebSocket – обслуживает WebSocket-подключения к очереди
 func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	queueID := vars["id"]
+	participantID := r.URL.Query().Get("participantId")
 
 	// Проверяем существование очереди
 	if _, ok := h.store.Get(queueID); !ok {
@@ -38,9 +40,9 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	h.hub.Subscribe(queueID, conn)
-	defer h.hub.Unsubscribe(queueID, conn)
-
+	h.hub.Subscribe(queueID, participantID, conn)
+	defer h.hub.Unsubscribe(queueID, participantID, conn)
+	
 	// Ожидаем закрытия соединения (пока не обрабатываем входящие сообщения)
 	for {
 		if _, _, err := conn.ReadMessage(); err != nil {
@@ -317,4 +319,76 @@ func (h *Handler) LeaveQueue(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+// POST /api/queues/{id}/swap/request
+func (h *Handler) SwapRequest(w http.ResponseWriter, r *http.Request) {
+    queueID := mux.Vars(r)["id"]
+
+    var req SwapRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "Invalid body", http.StatusBadRequest)
+        return
+    }
+
+    offer := &SwapOffer{
+        ID:       uuid.New().String(),
+        QueueID:  queueID,
+        FromID:   req.FromID,
+        FromName: req.FromName,
+        ToID:     req.ToID,
+    }
+    h.swaps.Add(offer)
+
+    // Шлём уведомление только целевому участнику через WS
+    h.hub.BroadcastTo(queueID, req.ToID, map[string]interface{}{
+        "type": "swap_request",
+        "swapId":   offer.ID,
+        "fromId":   req.FromID,
+        "fromName": req.FromName,
+    })
+
+    w.WriteHeader(http.StatusOK)
+}
+
+// POST /api/queues/{id}/swap/respond
+func (h *Handler) SwapRespond(w http.ResponseWriter, r *http.Request) {
+    queueID := mux.Vars(r)["id"]
+
+    var req SwapRespondRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "Invalid body", http.StatusBadRequest)
+        return
+    }
+
+    offer, ok := h.swaps.Take(req.SwapID)
+    if !ok {
+        http.Error(w, "Swap not found or expired", http.StatusNotFound)
+        return
+    }
+
+    if req.Accept {
+        if err := h.store.SwapParticipants(queueID, offer.FromID, offer.ToID); err != nil {
+            http.Error(w, "Swap failed", http.StatusInternalServerError)
+            return
+        }
+        // Всем обновление очереди
+        if q, ok := h.store.Get(queueID); ok {
+            h.hub.Broadcast(queueID, map[string]interface{}{
+                "type": "queue_update",
+                "data": q,
+            })
+        }
+    } else {
+        // Достаём имя отказавшего участника
+        var declinerName string
+        h.store.db.QueryRow(`SELECT name FROM participants WHERE id = $1`, offer.ToID).Scan(&declinerName)
+
+        h.hub.BroadcastTo(queueID, offer.FromID, map[string]interface{}{
+            "type":     "swap_declined",
+            "fromName": declinerName,
+        })
+    }
+
+    w.WriteHeader(http.StatusOK)
 }

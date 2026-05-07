@@ -17,6 +17,7 @@ var upgrader = websocket.Upgrader{
 type Hub struct {
 	// rooms: queueID → множество активных соединений
 	rooms map[string]map[*websocket.Conn]bool
+	clients map[string]map[string]*websocket.Conn
 	mu    sync.RWMutex
 }
 
@@ -24,22 +25,27 @@ type Hub struct {
 func NewHub() *Hub {
 	return &Hub{
 		rooms: make(map[string]map[*websocket.Conn]bool),
+		clients: make(map[string]map[string]*websocket.Conn),
 	}
 }
 
 // Subscribe добавляет соединение в комнату очереди.
-func (h *Hub) Subscribe(queueID string, conn *websocket.Conn) {
+func (h *Hub) Subscribe(queueID, participantID string, conn *websocket.Conn) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if _, ok := h.rooms[queueID]; !ok {
 		h.rooms[queueID] = make(map[*websocket.Conn]bool)
+		h.clients[queueID] = make(map[string]*websocket.Conn)
 	}
 	h.rooms[queueID][conn] = true
+	if participantID != "" {
+		h.clients[queueID][participantID] = conn
+	}
 	log.Printf("WebSocket подключён к очереди %s (всего соединений: %d)", queueID, len(h.rooms[queueID]))
 }
 
 // Unsubscribe удаляет соединение из комнаты.
-func (h *Hub) Unsubscribe(queueID string, conn *websocket.Conn) {
+func (h *Hub) Unsubscribe(queueID, participantID string, conn *websocket.Conn) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if clients, ok := h.rooms[queueID]; ok {
@@ -47,6 +53,9 @@ func (h *Hub) Unsubscribe(queueID string, conn *websocket.Conn) {
 		if len(clients) == 0 {
 			delete(h.rooms, queueID)
 		}
+	}
+	if participantID != "" && h.clients[queueID] != nil {
+		delete(h.clients[queueID], participantID)
 	}
 	log.Printf("WebSocket отключён от очереди %s", queueID)
 }
@@ -58,12 +67,28 @@ func (h *Hub) Broadcast(queueID string, message interface{}) {
 		log.Printf("Broadcast marshal error: %v", err)
 		return
 	}
-
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	for conn := range h.rooms[queueID] {
 		if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
 			log.Printf("WebSocket write error: %v", err)
+			conn.Close()
+		}
+	}
+}
+
+// BroadcastTo отправляет JSON-сообщение конкретному участнику.
+func (h *Hub) BroadcastTo(queueID, participantID string, message interface{}) {
+	data, err := json.Marshal(message)
+	if err != nil {
+		log.Printf("BroadcastTo marshal error: %v", err)
+		return
+	}
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	if conn, ok := h.clients[queueID][participantID]; ok {
+		if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
+			log.Printf("BroadcastTo write error: %v", err)
 			conn.Close()
 		}
 	}

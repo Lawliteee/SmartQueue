@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -197,4 +198,54 @@ func (s *Store) FinishQueue(queueID string) {
 	if _, err := s.db.Exec(`UPDATE queues SET finished = TRUE WHERE id = $1`, queueID); err != nil {
 		log.Printf("Ошибка FinishQueue для %s: %v", queueID, err)
 	}
+}
+
+
+// SwapOffer — ожидающий запрос на обмен
+type SwapOffer struct {
+    ID       string
+    QueueID  string
+    FromID   string
+    FromName string
+    ToID     string
+}
+
+// SwapStore — хранит активные предложения обмена в памяти
+type SwapStore struct {
+    mu     sync.Mutex
+    offers map[string]*SwapOffer // swapID → offer
+}
+
+func NewSwapStore() *SwapStore {
+    return &SwapStore{offers: make(map[string]*SwapOffer)}
+}
+
+func (ss *SwapStore) Add(offer *SwapOffer) {
+    ss.mu.Lock()
+    defer ss.mu.Unlock()
+    ss.offers[offer.ID] = offer
+}
+
+func (ss *SwapStore) Take(swapID string) (*SwapOffer, bool) {
+    ss.mu.Lock()
+    defer ss.mu.Unlock()
+    o, ok := ss.offers[swapID]
+    if ok { delete(ss.offers, swapID) }
+    return o, ok
+}
+
+func (s *Store) SwapParticipants(queueID, idA, idB string) error {
+    tx, err := s.db.Begin()
+    if err != nil { return err }
+    defer tx.Rollback()
+
+    // Меняем joined_at местами — порядок определяется им
+    var timeA, timeB time.Time
+    tx.QueryRow(`SELECT joined_at FROM participants WHERE id = $1`, idA).Scan(&timeA)
+    tx.QueryRow(`SELECT joined_at FROM participants WHERE id = $1`, idB).Scan(&timeB)
+
+    tx.Exec(`UPDATE participants SET joined_at = $1 WHERE id = $2`, timeB, idA)
+    tx.Exec(`UPDATE participants SET joined_at = $1 WHERE id = $2`, timeA, idB)
+
+    return tx.Commit()
 }

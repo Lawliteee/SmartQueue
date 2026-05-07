@@ -42,10 +42,8 @@
 
     <!-- Модалки -->
     <QueueFinishedModal v-if="showFinished" @confirm="onFinishedConfirm" />
-    <ParticipantsModal
-      v-if="showParticipants":participants="participants"
-      :currentParticipant="currentParticipant":myId="getCookie('participantId')"
-      @close="showParticipants = false"/>
+    <ParticipantsModal v-if="showParticipants":participants="participants":currentParticipant="currentParticipant"
+      :myId="getCookie('participantId')" @close="showParticipants = false" @swap-requested="onSwapRequested"/>
     <SwapRequestModal v-if="showSwapRequest":fromName="swapFromName" @accept="acceptSwap" @decline="declineSwap"/>
     <KickedModal v-if="showKicked" @confirm="router.push('/')"/>
     <ChatModal v-if="showChat" @close="showChat = false" />
@@ -86,6 +84,7 @@ const waitTime = ref(0)
 const peopleAhead = ref(0)
 const currentNumber = ref(0)
 const currentParticipant = ref(null)
+const pendingSwapId = ref(null)
 
 let ws = null
 onMounted(async () => {
@@ -100,20 +99,28 @@ onUnmounted(() => {
 
 function connectWS() {
   const queueId = route.params.id
-  ws = new WebSocket(`ws://localhost:8080/api/ws/queue/${queueId}`)
+  const participantId = getCookie('participantId') ?? ''
+  ws = new WebSocket(
+    `ws://localhost:8080/api/ws/queue/${queueId}?participantId=${participantId}`
+  )
 
   ws.onmessage = (event) => {
     const msg = JSON.parse(event.data)
     if (msg.type === 'queue_update') {
       handleUpdate(msg.data)
+    } else if (msg.type === 'swap_request') {
+      // Пришло предложение обмена
+      pendingSwapId.value = msg.swapId
+      swapFromName.value = msg.fromName
+      showSwapRequest.value = true
+    } else if (msg.type === 'swap_declined') {
+      // Нам отказали
+      swapDeclinedName.value = msg.fromName
+      showSwapDeclined.value = true
     }
   }
 
-  ws.onclose = () => {
-    setTimeout(connectWS, 2000) // переподключение через 2 секунды если разорвалось
-  }
-
-  ws.onerror = (err) => { console.error('WebSocket error:', err) }
+  ws.onclose = () => { setTimeout(connectWS, 2000) }
 }
 
 async function fetchQueue() {
@@ -190,25 +197,27 @@ function onFinishedConfirm() {
 // Пропускает место в очереди
 async function skipMe() {
   // TODO
-  // const participantId = getCookie('participantId')
-  // await axios.post(`http://localhost:8080/api/queues/${route.params.id}/skip`, {
-  //   participantId
-  // })
   console.log('skip requested')
 }
 
 // Согласие на обмен местами
-function acceptSwap() {
-  // TODO
-  // await axios.post(`/api/queues/${route.params.id}/swap/accept`, { participantId: getCookie('participantId') })
+async function acceptSwap() {
+  await axios.post(`http://localhost:8080/api/queues/${route.params.id}/swap/respond`, {
+    swapId: pendingSwapId.value,
+    accept: true,
+  })
   showSwapRequest.value = false
+  pendingSwapId.value = null
 }
 
 // Отказ от обемена местами
-function declineSwap() {
-  // TODO
-  // await axios.post(`/api/queues/${route.params.id}/swap/decline`, { participantId: getCookie('participantId') })
+async function declineSwap() {
+  await axios.post(`http://localhost:8080/api/queues/${route.params.id}/swap/respond`, {
+    swapId: pendingSwapId.value,
+    accept: false,
+  })
   showSwapRequest.value = false
+  pendingSwapId.value = null
 }
 
 
@@ -222,6 +231,22 @@ function onKeydown(e) {
     swapDeclinedName.value = 'Иван'
     showSwapDeclined.value = true
   }
+}
+
+// Получение предложения об обмене
+async function onSwapRequested(targetParticipant) {
+  const myId = getCookie('participantId')
+  const myName = participants.value.find(p => p.id === myId)?.name ?? ''
+
+  await axios.post(
+    `http://localhost:8080/api/queues/${route.params.id}/swap/request`,
+    {
+      fromId: myId,
+      fromName: myName,
+      toId: targetParticipant.id,
+    }
+  )
+  showParticipants.value = false
 }
 </script>
 

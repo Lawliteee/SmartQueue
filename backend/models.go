@@ -25,7 +25,7 @@ type Queue struct {
 	Participants        []Participant `json:"participants"`
 	CurrentNumber       int           `json:"currentNumber"`
 	Finished            bool          `json:"finished"`
-	CurrentParticipant *Participant `json:"currentParticipant"`
+	CurrentParticipant  *Participant  `json:"currentParticipant"`
 }
 
 type CreateQueueRequest struct {
@@ -50,4 +50,15 @@ type QueueResponse struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 	Link string `json:"link"`
+}
+
+type SwapRequest struct {
+    FromID   string `json:"fromId"`
+    FromName string `json:"fromName"`
+    ToID     string `json:"toId"`
+}
+
+type SwapRespondRequest struct {
+    SwapID  string `json:"swapId"`
+    Accept  bool   `json:"accept"`
 }

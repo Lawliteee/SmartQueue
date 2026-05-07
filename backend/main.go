@@ -30,6 +30,8 @@ func main() {
 	api.HandleFunc("/queues/{id}", handler.GetQueue).Methods("GET")
 	api.HandleFunc("/queues/{id}/join", handler.JoinQueue).Methods("POST")
 	api.HandleFunc("/queues/{id}/participants/{participantId}", handler.LeaveQueue).Methods("DELETE")
+	api.HandleFunc("/queues/{id}/swap/request", handler.SwapRequest).Methods("POST")
+	api.HandleFunc("/queues/{id}/swap/respond", handler.SwapRespond).Methods("POST")
 
 	// ── WebSocket для live‑обновлений ───────────────────────
 	api.HandleFunc("/ws/queue/{id}", handler.HandleWebSocket).Methods("GET") // <-- новый маршрут
