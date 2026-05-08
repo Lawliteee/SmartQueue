@@ -8,8 +8,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-// NewDB открывает соединение с PostgreSQL.
-// Строка подключения берётся из переменной окружения DATABASE_URL.
+// Открывает соединение с PostgreSQL. Строка подключения берётся из переменной окружения DATABASE_URL.
 func NewDB() *sql.DB {
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
@@ -29,8 +28,7 @@ func NewDB() *sql.DB {
 	return db
 }
 
-// RunMigrations применяет все миграции по порядку.
-// Безопасно при повторном запуске — все операции используют IF NOT EXISTS.
+// Применяет все миграции по порядку
 func RunMigrations(db *sql.DB) {
 	migrations := []string{
 		"migrations/001_init.sql",

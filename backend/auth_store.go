@@ -8,8 +8,7 @@ import (
 var ErrUserNotFound = errors.New("user not found")
 var ErrEmailTaken = errors.New("email already registered")
 
-// CreateUser сохраняет нового пользователя.
-// Возвращает ErrEmailTaken, если email уже занят.
+// Сохраняет нового пользователя. Возвращает ErrEmailTaken, если email уже занят
 func (s *Store) CreateUser(user *User) error {
 	_, err := s.db.Exec(`
 		INSERT INTO users (id, email, password_hash, display_name)
@@ -26,8 +25,7 @@ func (s *Store) CreateUser(user *User) error {
 	return nil
 }
 
-// GetUserByEmail возвращает пользователя по email.
-// Возвращает ErrUserNotFound, если не найден.
+// Возвращает пользователя по email (Возвращает ErrUserNotFound, если не найден)
 func (s *Store) GetUserByEmail(email string) (*User, error) {
 	user := &User{}
 	err := s.db.QueryRow(`
@@ -44,7 +42,7 @@ func (s *Store) GetUserByEmail(email string) (*User, error) {
 	return user, nil
 }
 
-// isUniqueViolation проверяет, является ли ошибка нарушением уникального ограничения PostgreSQL.
+// Проверяет, является ли ошибка нарушением уникального ограничения постгрес
 func isUniqueViolation(err error) bool {
 	if err == nil {
 		return false

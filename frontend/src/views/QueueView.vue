@@ -10,6 +10,7 @@
       <img src="/icons/burger.png" alt="меню" width="22" height="22" />
     </button>
 
+    <!-- Заголовок и осн инфа -->
     <section class="queue-info">
       <h2 class="queue-title">{{ queueTitle }}</h2>
     </section>
@@ -29,12 +30,7 @@
         <button class="btn-skip" @click="skipMe" :disabled="waitTime === -1">
           Пропустить меня
         </button>
-        <button
-          class="btn-leave"
-          :disabled="waitTime === -1"
-          :class="{ 'btn-leave--disabled': waitTime === -1 }"
-          @click="leaveQueue"
-        >
+        <button class="btn-leave" :disabled="waitTime === -1" :class="{ 'btn-leave--disabled': waitTime === -1 }" @click="leaveQueue">
           Покинуть очередь
         </button>
       </div>

@@ -48,6 +48,7 @@
     </div>
   </div>
 
+  <!-- Модалки -->
   <ChatModal v-if="showChat" @close="showChat = false" />
 </template>
 

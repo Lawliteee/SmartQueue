@@ -21,7 +21,7 @@ func NewHandler(store *Store, hub *Hub) *Handler {
 	return &Handler{store: store, hub: hub, swaps: NewSwapStore()}
 }
 
-// HandleWebSocket – обслуживает WebSocket-подключения к очереди
+// Обслуживает WebSocket-подключения к очереди
 func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	queueID := vars["id"]
@@ -122,7 +122,7 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	//  1. считаем среднее время
+	// Считаем среднее время
 	avgWait := float64(5)
 
 	rows, err := h.store.db.Query(`
@@ -149,20 +149,20 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	//  2. ETA для каждого
+	// ETA для каждого
 	etAs := make([]int, len(queue.Participants))
 
 	for i := range queue.Participants {
 		etAs[i] = int(avgWait * float64(i+1))
 	}
 
-	//  3. текущее ожидание
+	// текущее ожидание
 	waitTime := 0
 	if len(etAs) > 0 {
 		waitTime = etAs[0]
 	}
 
-	//  4. ответ
+	// Ответ
 	type QueueInfo struct {
 		ID                 string        `json:"id"`
 		Name               string        `json:"name"`

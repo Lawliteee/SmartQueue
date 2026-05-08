@@ -15,17 +15,17 @@ func main() {
 	RunMigrations(db)
 
 	store := NewStore(db)
-	hub := NewHub()                   // <-- создаём хаб
-	handler := NewHandler(store, hub) // <-- передаём хаб
+	hub := NewHub()                   // создаём хаб
+	handler := NewHandler(store, hub) // передаём хаб
 
 	r := mux.NewRouter()
 	api := r.PathPrefix("/api").Subrouter()
 
-	// ── Аутентификация (публичные) ──────────────────────────
+	// Аутентификация (публичные)
 	api.HandleFunc("/auth/register", handler.Register).Methods("POST")
 	api.HandleFunc("/auth/login", handler.Login).Methods("POST")
 
-	// ── Очереди (публичные) ─────────────────────────────────
+	// Очереди (публичные)
 	api.HandleFunc("/queues", handler.CreateQueue).Methods("POST")
 	api.HandleFunc("/queues/{id}", handler.GetQueue).Methods("GET")
 	api.HandleFunc("/queues/{id}/join", handler.JoinQueue).Methods("POST")
@@ -33,10 +33,9 @@ func main() {
 	api.HandleFunc("/queues/{id}/swap/request", handler.SwapRequest).Methods("POST")
 	api.HandleFunc("/queues/{id}/swap/respond", handler.SwapRespond).Methods("POST")
 
-	// ── WebSocket для live‑обновлений ───────────────────────
-	api.HandleFunc("/ws/queue/{id}", handler.HandleWebSocket).Methods("GET") // <-- новый маршрут
-
-	// ── Административные (только для авторизованных) ────────
+	// WebSocket для live обновлений
+	api.HandleFunc("/ws/queue/{id}", handler.HandleWebSocket).Methods("GET")
+	// (только для авторизованных)
 	admin := api.PathPrefix("/admin").Subrouter()
 	admin.Use(AuthMiddleware)
 	admin.HandleFunc("/queues/{id}/next", handler.CallNext).Methods("POST")

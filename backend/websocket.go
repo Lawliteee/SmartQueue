@@ -10,18 +10,18 @@ import (
 )
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true }, // для разработки
+	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-// Hub управляет всеми WebSocket-соединениями по очереди.
+// Управляет всеми вебсокет соединениями по очереди.
 type Hub struct {
-	// rooms: queueID → множество активных соединений
+	// rooms: queueID - множество активных соединений
 	rooms map[string]map[*websocket.Conn]bool
 	clients map[string]map[string]*websocket.Conn
 	mu    sync.RWMutex
 }
 
-// NewHub создаёт новый Hub.
+// Создаёт новый Hub.
 func NewHub() *Hub {
 	return &Hub{
 		rooms: make(map[string]map[*websocket.Conn]bool),
@@ -29,7 +29,7 @@ func NewHub() *Hub {
 	}
 }
 
-// Subscribe добавляет соединение в комнату очереди.
+// Добавляет соединение в комнату очереди.
 func (h *Hub) Subscribe(queueID, participantID string, conn *websocket.Conn) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -44,7 +44,7 @@ func (h *Hub) Subscribe(queueID, participantID string, conn *websocket.Conn) {
 	log.Printf("WebSocket подключён к очереди %s (всего соединений: %d)", queueID, len(h.rooms[queueID]))
 }
 
-// Unsubscribe удаляет соединение из комнаты.
+// Удаляет соединение из комнаты.
 func (h *Hub) Unsubscribe(queueID, participantID string, conn *websocket.Conn) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -60,7 +60,7 @@ func (h *Hub) Unsubscribe(queueID, participantID string, conn *websocket.Conn) {
 	log.Printf("WebSocket отключён от очереди %s", queueID)
 }
 
-// Broadcast отправляет JSON-сообщение всем клиентам в комнате очереди.
+// Отправляет JSON сообщение всем клиентам в комнате очереди.
 func (h *Hub) Broadcast(queueID string, message interface{}) {
 	data, err := json.Marshal(message)
 	if err != nil {
@@ -77,7 +77,7 @@ func (h *Hub) Broadcast(queueID string, message interface{}) {
 	}
 }
 
-// BroadcastTo отправляет JSON-сообщение конкретному участнику.
+// Отправляет JSON-сообщение конкретному участнику
 func (h *Hub) BroadcastTo(queueID, participantID string, message interface{}) {
 	data, err := json.Marshal(message)
 	if err != nil {
