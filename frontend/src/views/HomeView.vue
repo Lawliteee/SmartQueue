@@ -30,18 +30,14 @@
 
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import JoinQueueModal from '../components/JoinModal.vue'
-import { getUser } from '../utils/auth.js'
+import { useCurrentUser } from '../utils/useCurrentUser.js'
+const currentUser = useCurrentUser()
 
 const router = useRouter()
 const modalOpen = ref(false)
-const currentUser = ref(null)
-
-onMounted(() => {
-  currentUser.value = getUser()
-})
 
 function handleCreateQueue() {
   if (!currentUser.value) return

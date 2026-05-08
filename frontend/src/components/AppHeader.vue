@@ -38,16 +38,16 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import LoginModal from './LoginModal.vue'
 import RegisterModal from './RegisterModal.vue'
 import AccountModal from './AccountModal.vue'
-import { getUser, clearUser } from '../utils/auth.js'
+import { clearUser } from '../utils/auth.js'
+import { useCurrentUser } from '../utils/useCurrentUser.js'
+const currentUser = useCurrentUser()
 
 const loginOpen = ref(false)
 const registerOpen = ref(false)
 const accountOpen = ref(false)
-const currentUser = ref(null)
 const avatarRef = ref(null)
 
 onMounted(() => {
-  currentUser.value = getUser() // Получаем из куки
   document.addEventListener('click', onClickOutside) // Подписываемся на клики
 })
 
