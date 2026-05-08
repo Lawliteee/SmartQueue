@@ -25,7 +25,7 @@ var jwtSecret = func() []byte {
 
 const tokenTTL = 72 * time.Hour // токен живёт 3 суток
 
-// ── Регистрация ────────────────────────────────────────────────────────────────
+// Регистрация
 
 // POST /api/auth/register
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
@@ -77,7 +77,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(buildAuthResponse(token, user))
 }
 
-// ── Вход ───────────────────────────────────────────────────────────────────────
+// Вход
 
 // POST /api/auth/login
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
@@ -114,7 +114,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(buildAuthResponse(token, user))
 }
 
-// ── Middleware ─────────────────────────────────────────────────────────────────
+// Middleware
 
 // AuthMiddleware проверяет JWT из заголовка Authorization: Bearer <token>.
 // При успехе добавляет userID в контекст (ключ ctxUserID).
@@ -147,7 +147,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// ── Вспомогательные функции ────────────────────────────────────────────────────
+// Вспомогательные функции
 
 func generateToken(userID, email string) (string, error) {
 	claims := jwt.RegisteredClaims{

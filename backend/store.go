@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -14,7 +15,7 @@ func NewStore(db *sql.DB) *Store {
 	return &Store{db: db}
 }
 
-// Save сохраняет новую очередь вместе с администраторами.
+// Сохраняет новую очередь вместе с администраторами
 func (s *Store) Save(queue *Queue) error {
 	tx, err := s.db.Begin()
 	if err != nil {
@@ -50,7 +51,7 @@ func (s *Store) Save(queue *Queue) error {
 	return tx.Commit()
 }
 
-// Get возвращает очередь со всеми участниками и администраторами.
+// Возвращает очередь со всеми участниками и администраторами
 func (s *Store) Get(id string) (*Queue, bool) {
 	queue := &Queue{}
 
@@ -86,7 +87,7 @@ func (s *Store) Get(id string) (*Queue, bool) {
 		}
 	}
 
-	// Участники (отсортированы по времени вступления — FIFO)
+	// Участники (FIFO
 	pRows, err := s.db.Query(`
 		SELECT id, name, priority FROM participants
 		WHERE queue_id = $1 ORDER BY joined_at ASC`, id,
@@ -117,7 +118,7 @@ func (s *Store) Get(id string) (*Queue, bool) {
 	return queue, true
 }
 
-// AddParticipant добавляет участника в очередь.
+// добавляет участника в очередь.
 func (s *Store) AddParticipant(queueID string, p Participant) {
 	_, err := s.db.Exec(`
 		INSERT INTO participants (id, queue_id, name, priority, joined_at)
@@ -134,7 +135,7 @@ func (s *Store) RemoveParticipant(queueID, participantID string) {
         participantID, queueID)
 }
 
-// ShiftParticipant удаляет первого участника (FIFO) и увеличивает счётчик.
+// Удаляет первого участника и увеличивает счётчик
 func (s *Store) ShiftParticipant(queueID string) {
 	tx, err := s.db.Begin()
 	if err != nil {
@@ -142,7 +143,7 @@ func (s *Store) ShiftParticipant(queueID string) {
 	}
 	defer tx.Rollback()
 
-	// 1. Берём первого участника + время входа
+	// Берём первого участника + время входа
 	var pID, pName string
 	var joinedAt time.Time
 
@@ -158,22 +159,22 @@ func (s *Store) ShiftParticipant(queueID string) {
 		return
 	}
 
-	// 2. Считаем РЕАЛЬНОЕ время ожидания (в минутах)
+	// Считаем РЕАЛЬНОЕ время ожидания (в минутах)
 	now := time.Now()
 	waitMinutes := int(now.Sub(joinedAt).Minutes())
 
-	// 3. Считаем сколько людей было перед ним
+	// Считаем сколько людей было перед ним
 	var count int
 	tx.QueryRow(`
 		SELECT COUNT(*) FROM participants WHERE queue_id = $1
 	`, queueID).Scan(&count)
 
-	// 4. Удаляем из очереди
+	// Удаляем из очереди
 	tx.Exec(`
 		DELETE FROM participants WHERE id = $1
 	`, pID)
 
-	// 5. Обновляем очередь
+	// Обновляем очередь
 	tx.Exec(`
 		UPDATE queues
 		SET current_number = current_number + 1,
@@ -183,7 +184,7 @@ func (s *Store) ShiftParticipant(queueID string) {
 		WHERE id = $1
 	`, queueID, pID, pName)
 
-	// 6. Сохраняем реальное наблюдение
+	// Сохраняем реальное наблюдение
 	tx.Exec(`
 		INSERT INTO queue_wait_stats (queue_id, wait_time, participants_count)
 		VALUES ($1, $2, $3)
@@ -192,9 +193,59 @@ func (s *Store) ShiftParticipant(queueID string) {
 	tx.Commit()
 }
 
-// FinishQueue помечает очередь как завершённую.
+// Помечает очередь как завершённую.
 func (s *Store) FinishQueue(queueID string) {
 	if _, err := s.db.Exec(`UPDATE queues SET finished = TRUE WHERE id = $1`, queueID); err != nil {
 		log.Printf("Ошибка FinishQueue для %s: %v", queueID, err)
 	}
+}
+
+
+// Ожидающий запрос на обмен
+type SwapOffer struct {
+    ID       string
+    QueueID  string
+    FromID   string
+    FromName string
+    ToID     string
+}
+
+// Хранит активные предложения обмена в памяти
+type SwapStore struct {
+    mu     sync.Mutex
+    offers map[string]*SwapOffer
+}
+
+func NewSwapStore() *SwapStore {
+    return &SwapStore{offers: make(map[string]*SwapOffer)}
+}
+
+func (ss *SwapStore) Add(offer *SwapOffer) {
+    ss.mu.Lock()
+    defer ss.mu.Unlock()
+    ss.offers[offer.ID] = offer
+}
+
+func (ss *SwapStore) Take(swapID string) (*SwapOffer, bool) {
+    ss.mu.Lock()
+    defer ss.mu.Unlock()
+    o, ok := ss.offers[swapID]
+    if ok { delete(ss.offers, swapID) }
+    return o, ok
+}
+
+func (s *Store) SwapParticipants(queueID, idA, idB string) error {
+    tx, err := s.db.Begin()
+    if err != nil { return err }
+    defer tx.Rollback()
+
+    // Меняем joined_at местами
+    var timeA, timeB time.Time
+    tx.QueryRow(`SELECT joined_at FROM participants WHERE id = $1`, idA).Scan(&timeA)
+    tx.QueryRow(`SELECT joined_at FROM participants WHERE id = $1`, idB).Scan(&timeB)
+
+    tx.Exec(`UPDATE participants SET joined_at = $1 WHERE id = $2`, timeB, idA)
+    tx.Exec(`UPDATE participants SET joined_at = $1 WHERE id = $2`, timeA, idB)
+
+    return tx.Commit()
 }

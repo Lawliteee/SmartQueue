@@ -15,7 +15,7 @@
           <span class="p-number">{{ idx + 1 }}.</span>
           <span class="p-name">{{ p.name }}</span>
           <button
-            v-if="p.id !== myId"
+            v-if="p.id !== myId && !(queueStarted && idx === 0)"
             class="btn-swap"
             @click="requestSwap(p)"
             title="Предложить обмен"
@@ -31,12 +31,13 @@
 <script setup>
 import { computed } from 'vue'
 
-defineEmits(['close'])
+const emit = defineEmits(['close', 'swap-requested'])
 
 const props = defineProps({
   participants: { type: Array, default: () => [] },
   currentParticipant: { type: Object, default: null },
   myId: { type: String, default: null },
+  queueStarted: { type: Boolean, default: false }
 })
 
 const displayedParticipants = computed(() => {
@@ -46,12 +47,7 @@ const displayedParticipants = computed(() => {
 
 // Предлагает другому пользователю обмен местами
 function requestSwap(targetParticipant) {
-  // TODO
-  // await axios.post(`/api/queues/${queueId}/swap`, {
-  //   participantId: myId,
-  //   targetId: targetParticipant.id
-  // })
-  console.log('swap requested with ', targetParticipant.name)
+  emit('swap-requested', targetParticipant)
 }
 </script>
 
