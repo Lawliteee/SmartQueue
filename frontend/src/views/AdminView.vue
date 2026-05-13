@@ -211,6 +211,7 @@ async function finishQueue() {
   transition: background 0.20s;
   z-index: 10;
 }
+
 .chat-btn:hover { background: #cfcfcf; }
 
 .queue-bar {
@@ -411,7 +412,6 @@ async function finishQueue() {
 
 .current-block-ns { opacity: 0.4; }
 
-
 /* Кнопка удаления участника */
 .btn-remove {
   margin-left: auto;
@@ -426,7 +426,5 @@ async function finishQueue() {
   transition: color 0.20s;
 }
 
-.btn-remove:hover {
-  color: var(--text);
-}
+.btn-remove:hover { color: var(--text); }
 </style>

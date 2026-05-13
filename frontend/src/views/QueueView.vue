@@ -10,7 +10,7 @@
       <img src="/icons/burger.png" alt="меню" width="22" height="22" />
     </button>
 
-    <!-- Заголовок и осн инфа -->
+    <!-- Заголовок и осн. инфа -->
     <section class="queue-info">
       <h2 class="queue-title">{{ queueTitle }}</h2>
     </section>
