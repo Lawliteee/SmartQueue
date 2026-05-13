@@ -140,7 +140,7 @@ const createQueue = async () => {
       priorityCount: parseInt(priorityCount.value) || 0,
       initialPriority: parseInt(initialPriority.value) || 0,
       anonymousChat: anonymousChat.value,
-      systemNotifications: imFreeFeature.value,
+      imFreeFeature: imFreeFeature.value,
       swapPositions: swapPositions.value,
       admins: admins.value
     }

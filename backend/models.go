@@ -18,7 +18,7 @@ type Queue struct {
 	PriorityCount       int           `json:"priorityCount"`
 	InitialPriority     int           `json:"initialPriority"`
 	AnonymousChat       bool          `json:"anonymousChat"`
-	SystemNotifications bool          `json:"systemNotifications"`
+	ImFreeFeature 		bool 		  `json:"imFreeFeature"`
 	SwapPositions       bool          `json:"swapPositions"`
 	Admins              []string      `json:"admins"`
 	CreatedAt           time.Time     `json:"createdAt"`
@@ -37,7 +37,7 @@ type CreateQueueRequest struct {
 	PriorityCount       int      `json:"priorityCount"`
 	InitialPriority     int      `json:"initialPriority"`
 	AnonymousChat       bool     `json:"anonymousChat"`
-	SystemNotifications bool     `json:"systemNotifications"`
+	ImFreeFeature 		bool 	 `json:"imFreeFeature"`
 	SwapPositions       bool     `json:"swapPositions"`
 	Admins              []string `json:"admins"`
 }

@@ -27,12 +27,12 @@ func (s *Store) Save(queue *Queue) error {
 		INSERT INTO queues (
 			id, name, description, start_time, max_participants,
 			has_priority, priority_count, initial_priority,
-			anonymous_chat, system_notifications, swap_positions,
+			anonymous_chat, im_free_feature, swap_positions,
 			created_at, current_number, finished
 		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
 		queue.ID, queue.Name, queue.Description, queue.StartTime, queue.MaxParticipants,
 		queue.HasPriority, queue.PriorityCount, queue.InitialPriority,
-		queue.AnonymousChat, queue.SystemNotifications, queue.SwapPositions,
+		queue.AnonymousChat, queue.ImFreeFeature, queue.SwapPositions,
 		queue.CreatedAt, queue.CurrentNumber, queue.Finished,
 	)
 	if err != nil {
@@ -58,13 +58,13 @@ func (s *Store) Get(id string) (*Queue, bool) {
 	err := s.db.QueryRow(`
 		SELECT id, name, description, start_time, max_participants,
 		       has_priority, priority_count, initial_priority,
-		       anonymous_chat, system_notifications, swap_positions,
+		       anonymous_chat, im_free_feature, swap_positions,
 		       created_at, current_number, finished
 		FROM queues WHERE id = $1`, id,
 	).Scan(
 		&queue.ID, &queue.Name, &queue.Description, &queue.StartTime, &queue.MaxParticipants,
 		&queue.HasPriority, &queue.PriorityCount, &queue.InitialPriority,
-		&queue.AnonymousChat, &queue.SystemNotifications, &queue.SwapPositions,
+		&queue.AnonymousChat, &queue.ImFreeFeature, &queue.SwapPositions,
 		&queue.CreatedAt, &queue.CurrentNumber, &queue.Finished,
 	)
 	if err == sql.ErrNoRows {

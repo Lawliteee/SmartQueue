@@ -149,7 +149,7 @@ function handleUpdate(data) {
   participants.value = data.participants || []
   currentNumber.value = data.currentNumber ?? 0
   currentParticipant.value = data.currentParticipant ?? null
-  imFreeFeature.value = data.systemNotifications ?? false
+  imFreeFeature.value = data.imFreeFeature ?? false
 
   if (data.finished) {
     ws?.close()

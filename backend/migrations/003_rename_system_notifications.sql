@@ -1,0 +1,1 @@
+ALTER TABLE queues RENAME COLUMN system_notifications TO im_free_feature;

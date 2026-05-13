@@ -71,7 +71,7 @@ func (h *Handler) CreateQueue(w http.ResponseWriter, r *http.Request) {
 		PriorityCount:       req.PriorityCount,
 		InitialPriority:     req.InitialPriority,
 		AnonymousChat:       req.AnonymousChat,
-		SystemNotifications: req.SystemNotifications,
+		ImFreeFeature: 		 req.ImFreeFeature,
 		SwapPositions:       req.SwapPositions,
 		Admins:              req.Admins,
 		CreatedAt:           time.Now(),
@@ -175,6 +175,7 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 		Finished           bool          `json:"finished"`
 		CurrentParticipant *Participant  `json:"currentParticipant"`
 		MaxParticipants    int           `json:"maxParticipants"`
+		ImFreeFeature 	   bool          `json:"imFreeFeature"`
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -191,6 +192,7 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 		Finished:           queue.Finished,
 		CurrentParticipant: currentParticipant,
 		MaxParticipants:    queue.MaxParticipants,
+		ImFreeFeature: 		queue.ImFreeFeature,
 	})
 }
 
