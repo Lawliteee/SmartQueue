@@ -249,3 +249,12 @@ func (s *Store) SwapParticipants(queueID, idA, idB string) error {
 
     return tx.Commit()
 }
+
+func (s *Store) ClearCurrentParticipant(queueID string) {
+    s.db.Exec(`
+        UPDATE queues
+        SET current_participant_id = NULL,
+            current_participant_name = NULL
+        WHERE id = $1
+    `, queueID)
+}

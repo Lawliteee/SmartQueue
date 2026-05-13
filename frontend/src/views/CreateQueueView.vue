@@ -56,8 +56,8 @@
             <span>Анонимный чат</span>
           </label>
           <label class="checkbox-item">
-            <input type="checkbox" v-model="systemNotifications" />
-            <span>Системные уведомления</span>
+            <input type="checkbox" v-model="imFreeFeature" />
+            <span>Функция "Я освободился"</span>
           </label>
           <label class="checkbox-item">
             <input type="checkbox" v-model="swapPositions" />
@@ -113,7 +113,7 @@ const hasPriority = ref(false)
 const priorityCount = ref('')
 const initialPriority = ref('')
 const anonymousChat = ref(false)
-const systemNotifications = ref(false)
+const imFreeFeature = ref(false)
 const swapPositions = ref(false)
 const adminInput = ref('')
 const admins = ref([])
@@ -140,7 +140,7 @@ const createQueue = async () => {
       priorityCount: parseInt(priorityCount.value) || 0,
       initialPriority: parseInt(initialPriority.value) || 0,
       anonymousChat: anonymousChat.value,
-      systemNotifications: systemNotifications.value,
+      systemNotifications: imFreeFeature.value,
       swapPositions: swapPositions.value,
       admins: admins.value
     }

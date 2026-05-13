@@ -30,7 +30,19 @@
         <button class="btn-skip" @click="skipMe" :disabled="waitTime === -1">
           Пропустить меня
         </button>
-        <button class="btn-leave" :disabled="waitTime === -1" :class="{ 'btn-leave--disabled': waitTime === -1 }" @click="leaveQueue">
+
+        <!-- Обычная кнопка -->
+        <button v-if="waitTime !== -1" class="btn-leave" @click="leaveQueue">
+          Покинуть очередь
+        </button>
+
+        <!-- Кнопка для вызванного -->
+        <button v-else-if="imFreeFeature" class="btn-leave" @click="imFree">
+          Я освободился
+        </button>
+
+        <!-- Заблокированная версия -->
+        <button v-else class="btn-leave btn-leave--disabled" disabled>
           Покинуть очередь
         </button>
       </div>
@@ -62,6 +74,7 @@ import axios from 'axios'
 const showFinished = ref(false)
 const showKicked = ref(false)
 const showChat = ref(false)
+const imFreeFeature = ref(false)
 
 const showParticipants = ref(false)
 const participants = ref([])
@@ -136,6 +149,7 @@ function handleUpdate(data) {
   participants.value = data.participants || []
   currentNumber.value = data.currentNumber ?? 0
   currentParticipant.value = data.currentParticipant ?? null
+  imFreeFeature.value = data.systemNotifications ?? false
 
   if (data.finished) {
     ws?.close()
@@ -170,6 +184,14 @@ function handleUpdate(data) {
   } else {
     waitTime.value = data.etAs?.[myPos] ?? null
   }
+}
+
+async function imFree() {
+  await axios.post(
+    `http://localhost:8080/api/queues/${route.params.id}/im-free`
+  )
+  removeCookie('participantId')
+  router.push('/')
 }
 
 async function leaveQueue() {

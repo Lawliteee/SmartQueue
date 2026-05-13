@@ -32,6 +32,7 @@ func main() {
 	api.HandleFunc("/queues/{id}/participants/{participantId}", handler.LeaveQueue).Methods("DELETE")
 	api.HandleFunc("/queues/{id}/swap/request", handler.SwapRequest).Methods("POST")
 	api.HandleFunc("/queues/{id}/swap/respond", handler.SwapRespond).Methods("POST")
+	api.HandleFunc("/queues/{id}/im-free", handler.ImFree).Methods("POST")
 
 	// WebSocket для live обновлений
 	api.HandleFunc("/ws/queue/{id}", handler.HandleWebSocket).Methods("GET")

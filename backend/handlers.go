@@ -404,3 +404,31 @@ func (h *Handler) SwapRespond(w http.ResponseWriter, r *http.Request) {
 
     w.WriteHeader(http.StatusOK)
 }
+
+// POST /api/queues/{id}/im-free – участник освободился, вызываем следующего
+func (h *Handler) ImFree(w http.ResponseWriter, r *http.Request) {
+    queueID := mux.Vars(r)["id"]
+
+    queue, ok := h.store.Get(queueID)
+    if !ok {
+        http.Error(w, "Queue not found", http.StatusNotFound)
+        return
+    }
+
+    // Если есть следующие — вызываем
+    if len(queue.Participants) > 0 {
+        h.store.ShiftParticipant(queueID)
+    } else {
+        // Очередь пуста — просто сбрасываем текущего
+        h.store.ClearCurrentParticipant(queueID)
+    }
+
+    if q, ok := h.store.Get(queueID); ok {
+        h.hub.Broadcast(queueID, map[string]interface{}{
+            "type": "queue_update",
+            "data": q,
+        })
+    }
+
+    w.WriteHeader(http.StatusOK)
+}
