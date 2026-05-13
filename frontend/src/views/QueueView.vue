@@ -40,7 +40,7 @@
     <QueueFinishedModal v-if="showFinished" @confirm="onFinishedConfirm" />
     <ParticipantsModal v-if="showParticipants":participants="participants":currentParticipant="currentParticipant"
       :myId="getCookie('participantId')" @close="showParticipants = false" @swap-requested="onSwapRequested":queueStarted="currentNumber > 0"/>
-    <SwapRequestModal v-if="showSwapRequest":fromName="swapFromName" @accept="acceptSwap" @decline="declineSwap"/>
+    <SwapRequestModal v-if="showSwapRequest":fromName="swapFromName":fromPos="swapFromPos" @accept="acceptSwap" @decline="declineSwap"/>
     <KickedModal v-if="showKicked" @confirm="router.push('/')"/>
     <ChatModal v-if="showChat" @close="showChat = false" />
     <SwapDeclinedModal v-if="showSwapDeclined":fromName="swapDeclinedName" @confirm="showSwapDeclined = false"/>
@@ -71,6 +71,7 @@ const router = useRouter()
 
 const showSwapRequest = ref(false)
 const swapFromName = ref('')
+const swapFromPos = ref(0)
 
 const showSwapDeclined = ref(false)
 const swapDeclinedName = ref('')
@@ -81,6 +82,7 @@ const peopleAhead = ref(0)
 const currentNumber = ref(0)
 const currentParticipant = ref(null)
 const pendingSwapId = ref(null)
+
 
 let ws = null
 onMounted(async () => {
@@ -108,6 +110,7 @@ function connectWS() {
       // Пришло предложение обмена
       pendingSwapId.value = msg.swapId
       swapFromName.value = msg.fromName
+      swapFromPos.value = msg.fromPos
       showSwapRequest.value = true
     } else if (msg.type === 'swap_declined') {
       // Нам отказали

@@ -339,6 +339,17 @@ func (h *Handler) SwapRequest(w http.ResponseWriter, r *http.Request) {
         ToID:     req.ToID,
     }
     h.swaps.Add(offer)
+	
+	// Находим позицию fromID в очереди
+	queue, _ := h.store.Get(queueID)
+	fromPos := 0
+	for i, p := range queue.Participants {
+    if p.ID == req.FromID {
+			fromPos = i + 1
+			break
+		}
+	}
+
 
     // Шлём уведомление только целевому участнику через WS
     h.hub.BroadcastTo(queueID, req.ToID, map[string]interface{}{
@@ -346,6 +357,7 @@ func (h *Handler) SwapRequest(w http.ResponseWriter, r *http.Request) {
         "swapId":   offer.ID,
         "fromId":   req.FromID,
         "fromName": req.FromName,
+		"fromPos":  fromPos,
     })
 
     w.WriteHeader(http.StatusOK)

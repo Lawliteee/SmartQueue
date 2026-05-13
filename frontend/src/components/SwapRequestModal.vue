@@ -5,7 +5,8 @@
         <h3>Предложение обмена</h3>
       </div>
 
-      <p class="swap-text">{{ fromName }} предлагает поменяться с вами местами</p>
+      <p class="swap-text">{{ fromName }}<span class="swap-pos"> ({{ fromPos }})</span>
+         предлагает поменяться с вами местами</p>
 
       <div class="swap-actions">
         <button class="btn-decline" @click="$emit('decline')">Отказать</button>
@@ -16,7 +17,10 @@
 </template>
 
 <script setup>
-defineProps({ fromName: { type: String, default: '' } })
+defineProps({
+  fromName: { type: String, default: '' },
+  fromPos: { type: Number, default: 0 }
+})
 defineEmits(['accept', 'decline'])
 </script>
 
@@ -109,5 +113,11 @@ h3 {
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+/* Позиция того, кто предлагает обмен */
+.swap-pos {
+  font-size: 13px;
+  color: var(--text-muted);
 }
 </style>
