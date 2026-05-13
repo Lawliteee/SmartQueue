@@ -9,8 +9,8 @@
         <div v-for="(p, idx) in displayedParticipants":key="p.id" class="participant-row":class="{ 'participant-row--first': idx === 0 }">
           <span class="p-number">{{ idx + 1 }}.</span>
           <span class="p-name">{{ p.name }}</span>
-          <button v-if="p.id !== myId && !(queueStarted && idx === 0)" class="btn-swap"
-            @click="requestSwap(p)" title="Предложить обмен">
+          <button v-if="swapEnabled && p.id !== myId && !(p.id === currentParticipant?.id) && myId !== currentParticipant?.id"
+            class="btn-swap" @click="requestSwap(p)" title="Предложить обмен">
             <img src="/icons/swap.png" alt="обмен" width="16" height="16" />
           </button>
         </div>
@@ -28,7 +28,8 @@ const props = defineProps({
   participants: { type: Array, default: () => [] },
   currentParticipant: { type: Object, default: null },
   myId: { type: String, default: null },
-  queueStarted: { type: Boolean, default: false }
+  queueStarted: { type: Boolean, default: false },
+  swapEnabled: { type: Boolean, default: false }
 })
 
 const displayedParticipants = computed(() => {

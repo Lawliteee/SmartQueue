@@ -50,8 +50,8 @@
 
     <!-- Модалки -->
     <QueueFinishedModal v-if="showFinished" @confirm="onFinishedConfirm" />
-    <ParticipantsModal v-if="showParticipants":participants="participants":currentParticipant="currentParticipant"
-      :myId="getCookie('participantId')" @close="showParticipants = false" @swap-requested="onSwapRequested":queueStarted="currentNumber > 0"/>
+    <ParticipantsModal v-if="showParticipants":participants="participants":currentParticipant="currentParticipant":myId="getCookie('participantId')"
+      :swapEnabled="swapEnabled" @close="showParticipants = false" @swap-requested="onSwapRequested":queueStarted="currentNumber > 0"/>
     <SwapRequestModal v-if="showSwapRequest":fromName="swapFromName":fromPos="swapFromPos" @accept="acceptSwap" @decline="declineSwap"/>
     <KickedModal v-if="showKicked" @confirm="router.push('/')"/>
     <ChatModal v-if="showChat" @close="showChat = false" />
@@ -95,6 +95,7 @@ const peopleAhead = ref(0)
 const currentNumber = ref(0)
 const currentParticipant = ref(null)
 const pendingSwapId = ref(null)
+const swapEnabled = ref(false)
 
 
 let ws = null
@@ -150,6 +151,7 @@ function handleUpdate(data) {
   currentNumber.value = data.currentNumber ?? 0
   currentParticipant.value = data.currentParticipant ?? null
   imFreeFeature.value = data.imFreeFeature ?? false
+  swapEnabled.value = data.swapPositions ?? false
 
   if (data.finished) {
     ws?.close()
