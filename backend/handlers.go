@@ -166,6 +166,7 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 	type QueueInfo struct {
 		ID                 string        `json:"id"`
 		Name               string        `json:"name"`
+		Description        string        `json:"description"`
 		StartTime          string        `json:"startTime"`
 		CurrentNumber      int           `json:"currentNumber"`
 		Participants       []Participant `json:"participants"`
@@ -183,6 +184,7 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(QueueInfo{
 		ID:                 queue.ID,
 		Name:               queue.Name,
+		Description:        queue.Description,
 		StartTime:          queue.StartTime,
 		CurrentNumber:      queue.CurrentNumber,
 		Participants:       queue.Participants,
