@@ -6,7 +6,8 @@
         <button class="btn-close" @click="$emit('close')">Х</button>
       </div>
       <div class="participants-list">
-        <div v-for="(p, idx) in displayedParticipants":key="p.id" class="participant-row":class="{ 'participant-row--first': idx === 0 }">
+        <div v-for="(p, idx) in displayedParticipants":key="p.id" class="participant-row"
+        :class="{'participant-row--first': idx === 0,'participant-row--skipped': p.skipped}">
           <span class="p-number">{{ idx + 1 }}.</span>
           <span class="p-name">{{ p.name }}</span>
           <button v-if="swapEnabled && p.id !== myId && !(p.id === currentParticipant?.id) && myId !== currentParticipant?.id"
@@ -153,6 +154,8 @@ h3 {
     opacity: 1;
   }
 }
+
+.participant-row--skipped .p-name, .participant-row--skipped .p-number { opacity: 0.4; }
 
 /* Обмен местами */
 .btn-swap {

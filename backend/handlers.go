@@ -436,3 +436,57 @@ func (h *Handler) ImFree(w http.ResponseWriter, r *http.Request) {
 
     w.WriteHeader(http.StatusOK)
 }
+
+// POST /api/queues/{id}/skip
+func (h *Handler) SkipMe(w http.ResponseWriter, r *http.Request) {
+    queueID := mux.Vars(r)["id"]
+
+    var body struct {
+        ParticipantID string `json:"participantId"`
+    }
+    if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.ParticipantID == "" {
+        http.Error(w, "Invalid body", http.StatusBadRequest)
+        return
+    }
+
+    if err := h.store.SkipParticipant(queueID, body.ParticipantID); err != nil {
+        http.Error(w, "Skip failed", http.StatusInternalServerError)
+        return
+    }
+
+    h.store.ExpireSkips(queueID)
+
+    if q, ok := h.store.Get(queueID); ok {
+        h.hub.Broadcast(queueID, map[string]interface{}{
+            "type": "queue_update",
+            "data": q,
+        })
+    }
+    w.WriteHeader(http.StatusOK)
+}
+
+// POST /api/queues/{id}/return
+func (h *Handler) ReturnMe(w http.ResponseWriter, r *http.Request) {
+    queueID := mux.Vars(r)["id"]
+
+    var body struct {
+        ParticipantID string `json:"participantId"`
+    }
+    if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.ParticipantID == "" {
+        http.Error(w, "Invalid body", http.StatusBadRequest)
+        return
+    }
+
+    if err := h.store.ReturnParticipant(queueID, body.ParticipantID); err != nil {
+        http.Error(w, "Return failed", http.StatusInternalServerError)
+        return
+    }
+
+    if q, ok := h.store.Get(queueID); ok {
+        h.hub.Broadcast(queueID, map[string]interface{}{
+            "type": "queue_update",
+            "data": q,
+        })
+    }
+    w.WriteHeader(http.StatusOK)
+}

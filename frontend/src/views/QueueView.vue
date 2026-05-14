@@ -33,8 +33,14 @@
       <p v-if="currentNumber > 0" class="ahead-count">Перед вами: {{ peopleAhead }} чел.</p>
       <p v-else class="ahead-count" style="visibility: hidden">placeholder</p>
       <div class="btn-row">
-        <button class="btn-skip" @click="skipMe" :disabled="waitTime === -1">
+        <!-- Кнопка пропуска меня -->
+        <button v-if="!isSkipped && waitTime !== -1" class="btn-skip" @click="skipMe":disabled="currentNumber === 0">
           Пропустить меня
+        </button>
+
+        <!-- Вернуться назад -->
+        <button v-else-if="isSkipped" class="btn-return" @click="returnMe">
+          Вернуться ({{ skipTimeLeft }}с)
         </button>
 
         <!-- Обычная кнопка -->
@@ -105,6 +111,11 @@ const swapEnabled = ref(false)
 const queueDescription = ref('')
 const showTooltip = ref(false)
 
+const isSkipped = ref(false)
+const skipUntil = ref(null)
+const skipTimeLeft = ref(0)
+let skipTimer = null
+
 
 let ws = null
 onMounted(async () => {
@@ -115,6 +126,7 @@ onMounted(async () => {
 onUnmounted(() => {
   ws?.close()
   window.removeEventListener('keydown', onKeydown)
+  clearInterval(skipTimer)
 })
 
 function connectWS() {
@@ -204,6 +216,18 @@ function handleUpdate(data) {
   } else {
     waitTime.value = data.etAs?.[myPos] ?? null
   }
+
+  const myParticipant = data.participants.find(p => p.id === myId)
+  if (myParticipant) {
+    isSkipped.value = myParticipant.skipped
+    skipUntil.value = myParticipant.skipUntil ? new Date(myParticipant.skipUntil) : null
+    if (myParticipant.skipped && skipUntil.value) {
+      startSkipCountdown()
+    }
+  } else {
+    isSkipped.value = false
+    skipUntil.value = null
+  }
 }
 
 async function imFree() {
@@ -233,12 +257,6 @@ function openParticipants() {
 function onFinishedConfirm() {
   showFinished.value = false
   router.push('/')
-}
-
-// Пропускает место в очереди
-async function skipMe() {
-  // TODO
-  console.log('skip requested')
 }
 
 // Согласие на обмен местами
@@ -288,6 +306,37 @@ async function onSwapRequested(targetParticipant) {
     }
   )
   showParticipants.value = false
+}
+
+
+// Пропуск участника
+function startSkipCountdown() {
+  clearInterval(skipTimer)
+  skipTimer = setInterval(() => {
+    if (!skipUntil.value) { clearInterval(skipTimer); return }
+    const left = Math.max(0, Math.ceil((skipUntil.value - Date.now()) / 1000))
+    skipTimeLeft.value = left
+    if (left === 0) {
+      clearInterval(skipTimer)
+      isSkipped.value = false
+    }
+  }, 1000)
+}
+
+async function skipMe() {
+  const participantId = getCookie('participantId')
+  await axios.post(
+    `http://localhost:8080/api/queues/${route.params.id}/skip`,
+    { participantId }
+  )
+}
+
+async function returnMe() {
+  const participantId = getCookie('participantId')
+  await axios.post(
+    `http://localhost:8080/api/queues/${route.params.id}/return`,
+    { participantId }
+  )
 }
 </script>
 
@@ -473,5 +522,20 @@ async function onSwapRequested(targetParticipant) {
   white-space: nowrap;
   z-index: 100;
 }
+
+/* Кнопка возврата */
+.btn-return {
+  background: #f0a500;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 16px 32px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  transition: background 0.2s;
+}
+.btn-return:hover { background: #d4920a; }
 
 </style>

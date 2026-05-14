@@ -3,9 +3,12 @@ package main
 import "time"
 
 type Participant struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Priority int    `json:"priority"`
+	ID      	  	 string 	`json:"id"`
+	Name             string 	`json:"name"`
+	Priority 		 int    	`json:"priority"`
+	Skipped          bool       `json:"skipped"`
+    SkipUntil        *time.Time `json:"skipUntil,omitempty"`
+    OriginalPosition int        `json:"originalPosition"`
 }
 
 type Queue struct {
