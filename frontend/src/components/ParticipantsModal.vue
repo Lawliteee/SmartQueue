@@ -155,7 +155,7 @@ h3 {
   }
 }
 
-.participant-row--skipped .p-name, .participant-row--skipped .p-number { opacity: 0.4; }
+.participant-row--skipped .p-name, .participant-row--skipped .p-number { opacity: 0.5; }
 
 /* Обмен местами */
 .btn-swap {

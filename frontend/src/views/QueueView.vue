@@ -523,9 +523,9 @@ async function returnMe() {
   z-index: 100;
 }
 
-/* Кнопка возврата */
+/* Кнопка пропуска */
 .btn-return {
-  background: #f0a500;
+  background: #de8900;
   color: white;
   border: none;
   border-radius: 12px;
@@ -536,6 +536,6 @@ async function returnMe() {
   font-family: 'Fira Sans', sans-serif;
   transition: background 0.2s;
 }
-.btn-return:hover { background: #d4920a; }
+.btn-return:hover { background: #c95e00; }
 
 </style>
