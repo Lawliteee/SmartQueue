@@ -334,7 +334,7 @@ async function skipMe() {
     { participantId }
   )
   skipCooldown.value = true
-  setTimeout(() => { skipCooldown.value = false }, 60_000) // Отключение кнопки на минуту
+  setTimeout(() => { skipCooldown.value = false }, 20_000) // Отключение кнопки на минуту
 }
 
 async function returnMe() {
@@ -344,7 +344,7 @@ async function returnMe() {
     { participantId }
   )
   skipCooldown.value = true
-  setTimeout(() =>  { skipCooldown.value = false }, 60_000) // Отключение кнопки на минуту
+  setTimeout(() =>  { skipCooldown.value = false }, 20_000) // Отключение кнопки на минуту
 }
 </script>
 
