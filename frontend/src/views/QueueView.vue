@@ -33,15 +33,16 @@
       <p v-if="currentNumber > 0" class="ahead-count">Перед вами: {{ peopleAhead }} чел.</p>
       <p v-else class="ahead-count" style="visibility: hidden">placeholder</p>
       <div class="btn-row">
-        <!-- Кнопка пропуска меня -->
-        <button v-if="!isSkipped && waitTime !== -1" class="btn-skip" @click="skipMe":disabled="currentNumber === 0">
-          Пропустить меня
-        </button>
 
-        <!-- Вернуться назад -->
-        <button v-else-if="isSkipped" class="btn-return" @click="returnMe">
-          Вернуться ({{ skipTimeLeft }}с)
-        </button>
+        <!-- Кнопка пропуска меня -->
+        <template v-if="skipFeature">
+          <button v-if="!isSkipped && waitTime !== -1" class="btn-skip" @click="skipMe":disabled="currentNumber === 0">
+            Пропустить меня
+          </button>
+          <button v-else-if="isSkipped" class="btn-return"@click="returnMe">
+            Вернуться ({{ skipTimeLeft }}с)
+           </button>
+        </template>
 
         <!-- Обычная кнопка -->
         <button v-if="waitTime !== -1" class="btn-leave" @click="leaveQueue">
@@ -115,6 +116,8 @@ const isSkipped = ref(false)
 const skipUntil = ref(null)
 const skipTimeLeft = ref(0)
 let skipTimer = null
+const skipFeature = ref(false)
+const skipDurationMinutes = ref(10)
 
 
 let ws = null
@@ -174,8 +177,6 @@ async function fetchQueue() {
 }
 
 function handleUpdate(data) {
-  console.log('description:', data.description)  // ← добавь
-  console.log('queueDescription after set:', queueDescription.value)  // ← добавь
   participants.value = data.participants || []
   currentNumber.value = data.currentNumber ?? 0
   currentParticipant.value = data.currentParticipant ?? null
@@ -183,6 +184,8 @@ function handleUpdate(data) {
   swapEnabled.value = data.swapPositions ?? false
   queueDescription.value = data.description ?? ''
   queueTitle.value = data.name
+  skipFeature.value = data.skipFeature ?? false
+  skipDurationMinutes.value = data.skipDuration ?? 10
 
   if (data.finished) {
     ws?.close()

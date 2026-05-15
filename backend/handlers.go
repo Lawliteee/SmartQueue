@@ -70,7 +70,8 @@ func (h *Handler) CreateQueue(w http.ResponseWriter, r *http.Request) {
 		HasPriority:         req.HasPriority,
 		PriorityCount:       req.PriorityCount,
 		InitialPriority:     req.InitialPriority,
-		AnonymousChat:       req.AnonymousChat,
+		SkipFeature:  		 req.SkipFeature,
+		SkipDuration: 		 req.SkipDuration,
 		ImFreeFeature: 		 req.ImFreeFeature,
 		SwapPositions:       req.SwapPositions,
 		Admins:              req.Admins,
@@ -177,6 +178,8 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 		CurrentParticipant *Participant  `json:"currentParticipant"`
 		MaxParticipants    int           `json:"maxParticipants"`
 		ImFreeFeature 	   bool          `json:"imFreeFeature"`
+		SkipFeature  	   bool 		 `json:"skipFeature"`
+		SkipDuration 	   int  		 `json:"skipDuration"`
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -195,6 +198,8 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 		CurrentParticipant: currentParticipant,
 		MaxParticipants:    queue.MaxParticipants,
 		ImFreeFeature: 		queue.ImFreeFeature,
+		SkipFeature:  		queue.SkipFeature,
+		SkipDuration: 		queue.SkipDuration,	
 	})
 }
 
@@ -449,7 +454,14 @@ func (h *Handler) SkipMe(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    if err := h.store.SkipParticipant(queueID, body.ParticipantID); err != nil {
+    queue, ok := h.store.Get(queueID)
+    if !ok {
+        http.Error(w, "Queue not found", http.StatusNotFound)
+        return
+    }
+
+    duration := time.Duration(queue.SkipDuration) * time.Minute
+    if err := h.store.SkipParticipant(queueID, body.ParticipantID, duration); err != nil {
         http.Error(w, "Skip failed", http.StatusInternalServerError)
         return
     }

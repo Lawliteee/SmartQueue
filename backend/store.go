@@ -27,12 +27,12 @@ func (s *Store) Save(queue *Queue) error {
 		INSERT INTO queues (
 			id, name, description, start_time, max_participants,
 			has_priority, priority_count, initial_priority,
-			anonymous_chat, im_free_feature, swap_positions,
+			skip_feature, skip_duration, im_free_feature, swap_positions,
 			created_at, current_number, finished
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
 		queue.ID, queue.Name, queue.Description, queue.StartTime, queue.MaxParticipants,
 		queue.HasPriority, queue.PriorityCount, queue.InitialPriority,
-		queue.AnonymousChat, queue.ImFreeFeature, queue.SwapPositions,
+		queue.SkipFeature, queue.SkipDuration, queue.ImFreeFeature, queue.SwapPositions,
 		queue.CreatedAt, queue.CurrentNumber, queue.Finished,
 	)
 	if err != nil {
@@ -58,13 +58,13 @@ func (s *Store) Get(id string) (*Queue, bool) {
 	err := s.db.QueryRow(`
 		SELECT id, name, description, start_time, max_participants,
 		       has_priority, priority_count, initial_priority,
-		       anonymous_chat, im_free_feature, swap_positions,
+			   skip_feature, skip_duration, im_free_feature, swap_positions,
 		       created_at, current_number, finished
 		FROM queues WHERE id = $1`, id,
 	).Scan(
 		&queue.ID, &queue.Name, &queue.Description, &queue.StartTime, &queue.MaxParticipants,
 		&queue.HasPriority, &queue.PriorityCount, &queue.InitialPriority,
-		&queue.AnonymousChat, &queue.ImFreeFeature, &queue.SwapPositions,
+		&queue.SkipFeature, &queue.SkipDuration, &queue.ImFreeFeature, &queue.SwapPositions,
 		&queue.CreatedAt, &queue.CurrentNumber, &queue.Finished,
 	)
 	if err == sql.ErrNoRows {
@@ -268,9 +268,7 @@ func (s *Store) ClearCurrentParticipant(queueID string) {
     `, queueID)
 }
 
-const SkipDuration = 10 * time.Minute
-
-func (s *Store) SkipParticipant(queueID, participantID string) error {
+func (s *Store) SkipParticipant(queueID, participantID string, duration time.Duration) error {
     tx, err := s.db.Begin()
     if err != nil { return err }
     defer tx.Rollback()
@@ -283,7 +281,7 @@ func (s *Store) SkipParticipant(queueID, participantID string) error {
         AND joined_at <= (SELECT joined_at FROM participants WHERE id = $2)
     `, queueID, participantID).Scan(&currentPos)
 
-    skipUntil := time.Now().Add(SkipDuration)
+    skipUntil := time.Now().Add(duration)
 
     // Ставим в конец — joined_at чуть больше последнего
     tx.Exec(`

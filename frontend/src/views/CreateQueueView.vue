@@ -48,20 +48,24 @@
         </div>
       </div>
 
-      <!-- Ненужная фигня -->
+      <!-- Уже не Ненужная фигня -->
       <div class="form-row">
         <div class="checkbox-row">
           <label class="checkbox-item">
-            <input type="checkbox" v-model="anonymousChat" />
-            <span>Анонимный чат</span>
+            <input type="checkbox" v-model="skipFeature" />
+            <span>Функция "Пропустить меня"</span>
           </label>
+          <div class="inline-field">
+            <input type="number" class="form-input input-small" v-model="skipDuration" :disabled="!skipFeature" min="1" max="99"/>
+            <label class="inline-label">мин.</label>
+          </div>
           <label class="checkbox-item">
             <input type="checkbox" v-model="imFreeFeature" />
             <span>Функция "Я освободился"</span>
           </label>
           <label class="checkbox-item">
             <input type="checkbox" v-model="swapPositions" />
-            <span>Обмен позициями</span> <!-- TODO -->
+            <span>Обмен позициями</span>
           </label>
           <span class="info-icon" title="Участники могут меняться местами в очереди">i</span>
         </div>
@@ -112,7 +116,8 @@ const maxParticipants = ref('')
 const hasPriority = ref(false)
 const priorityCount = ref('')
 const initialPriority = ref('')
-const anonymousChat = ref(false)
+const skipFeature = ref(false)
+const skipDuration = ref(10)
 const imFreeFeature = ref(false)
 const swapPositions = ref(false)
 const adminInput = ref('')
@@ -139,7 +144,8 @@ const createQueue = async () => {
       hasPriority: hasPriority.value,
       priorityCount: parseInt(priorityCount.value) || 0,
       initialPriority: parseInt(initialPriority.value) || 0,
-      anonymousChat: anonymousChat.value,
+      skipFeature: skipFeature.value,
+      skipDuration: parseInt(skipDuration.value) || 10,
       imFreeFeature: imFreeFeature.value,
       swapPositions: swapPositions.value,
       admins: admins.value
@@ -398,6 +404,11 @@ input[type="checkbox"] {
 }
 
 .disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.form-input:disabled {
   opacity: 0.5;
   pointer-events: none;
 }
