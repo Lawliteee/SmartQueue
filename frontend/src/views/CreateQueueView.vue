@@ -31,6 +31,10 @@
             <label class="inline-label">Макс. участников</label>
             <input type="text" class="form-input input-small" v-model="maxParticipants" />
           </div>
+          <label class="checkbox-item">
+            <input type="checkbox" v-model="swapPositions" />
+            <span>Обмен позициями</span>
+          </label>
         </div>
       </div>
 
@@ -49,6 +53,7 @@
       </div>
 
       <!-- Уже не Ненужная фигня -->
+
       <div class="form-row">
         <div class="checkbox-row">
           <label class="checkbox-item">
@@ -56,18 +61,15 @@
             <span>Функция "Пропустить меня"</span>
           </label>
           <div class="inline-field">
-            <input type="number" class="form-input input-small" v-model="skipDuration" :disabled="!skipFeature" min="1" max="99"/>
+            <input type="number" class="form-input new-input-small" v-model="skipDuration" :disabled="!skipFeature" min="1" max="99"/>
             <label class="inline-label">мин.</label>
           </div>
           <label class="checkbox-item">
             <input type="checkbox" v-model="imFreeFeature" />
             <span>Функция "Я освободился"</span>
           </label>
-          <label class="checkbox-item">
-            <input type="checkbox" v-model="swapPositions" />
-            <span>Обмен позициями</span>
-          </label>
-          <span class="info-icon" title="Участники могут меняться местами в очереди">i</span>
+
+          <span class="info-icon" title="Пропустить меня - участник временно становится в конец очереди; Я освободился - участники могут без администратора двигать очередь">i</span>
         </div>
       </div>
 
@@ -188,7 +190,7 @@ h1 {
   border-radius: 18px;
   padding: 6px 32px;
   width: 100%;
-  max-width: 700px;
+  max-width: 790px;
 }
 
 .form-row {
@@ -259,6 +261,13 @@ h1 {
   color: var(--text);
 }
 
+.new-inline-label {
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
+  color: var(--text);
+}
+
 .select-small {
   width: auto;
   cursor: pointer;
@@ -267,6 +276,12 @@ h1 {
 
 .input-small {
   width: 70px;
+}
+
+.new-input-small {
+  width: 60px;
+  padding-right: 0px;
+  margin-right: 0px;
 }
 
 .ml {
