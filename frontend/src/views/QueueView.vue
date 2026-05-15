@@ -36,7 +36,7 @@
 
         <!-- Кнопка пропуска меня -->
         <template v-if="skipFeature">
-          <button v-if="!isSkipped && waitTime !== -1" class="btn-skip" @click="skipMe":disabled="currentNumber === 0">
+          <button v-if="!isSkipped && waitTime !== -1" class="btn-skip" @click="skipMe":disabled="currentNumber === 0 || skipCooldown">
             Пропустить меня
           </button>
           <button v-else-if="isSkipped" class="btn-return"@click="returnMe">
@@ -118,6 +118,7 @@ const skipTimeLeft = ref(0)
 let skipTimer = null
 const skipFeature = ref(false)
 const skipDurationMinutes = ref(10)
+const skipCooldown = ref(false)
 
 
 let ws = null
@@ -332,6 +333,8 @@ async function skipMe() {
     `http://localhost:8080/api/queues/${route.params.id}/skip`,
     { participantId }
   )
+  skipCooldown.value = true
+  setTimeout(() => { skipCooldown.value = false }, 60_000) // Отключение кнопки на минуту
 }
 
 async function returnMe() {
@@ -340,6 +343,8 @@ async function returnMe() {
     `http://localhost:8080/api/queues/${route.params.id}/return`,
     { participantId }
   )
+  skipCooldown.value = true
+  setTimeout(() =>  { skipCooldown.value = false }, 60_000) // Отключение кнопки на минуту
 }
 </script>
 
