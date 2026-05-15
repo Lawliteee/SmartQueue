@@ -10,6 +10,9 @@
         :class="{'participant-row--first': idx === 0,'participant-row--skipped': p.skipped}">
           <span class="p-number">{{ idx + 1 }}.</span>
           <span class="p-name">{{ p.name }}</span>
+          <span v-if="p.skipped && p.originalPosition" class="p-return-pos">
+            (бывш. поз. {{ p.originalPosition  + 1}})
+          </span>
           <button v-if="swapEnabled && p.id !== myId && !(p.id === currentParticipant?.id) && myId !== currentParticipant?.id"
             class="btn-swap" @click="requestSwap(p)" title="Предложить обмен">
             <img src="/icons/swap.png" alt="обмен" width="16" height="16" />
@@ -173,5 +176,12 @@ h3 {
 
 .btn-swap:hover {
   opacity: 1;
+}
+
+/* Позиция возврата */
+.p-return-pos {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: 4px;
 }
 </style>
