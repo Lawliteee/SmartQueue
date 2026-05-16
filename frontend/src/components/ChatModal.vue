@@ -22,7 +22,9 @@
 
       <div class="chat-input-row">
         <input v-model="inputText" class="chat-input" placeholder="Сообщение..." maxlength="100" @keydown.enter="send"/>
-        <button class="btn-send" @click="send" :disabled="!inputText.trim()">→</button>
+        <button class="btn-send" @click="send" :disabled="!inputText.trim()">
+          <img src="/icons/send.png" alt="отправить" width="25" height="25" />
+        </button>
       </div>
     </div>
   </div>
@@ -160,6 +162,7 @@ h3 { font-size: 17px; font-weight: 500; color: var(--text); margin: 0; }
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.2s;
+  padding-top: 4px;
 }
 .btn-send:hover { background: var(--teal); }
 
