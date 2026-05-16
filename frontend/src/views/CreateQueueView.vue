@@ -190,7 +190,7 @@ h1 {
   border-radius: 18px;
   padding: 6px 32px;
   width: 100%;
-  max-width: 790px;
+  max-width: 720px;
 }
 
 .form-row {
