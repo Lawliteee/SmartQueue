@@ -67,7 +67,7 @@
       :swapEnabled="swapEnabled" @close="showParticipants = false" @swap-requested="onSwapRequested":queueStarted="currentNumber > 0"/>
     <SwapRequestModal v-if="showSwapRequest":fromName="swapFromName":fromPos="swapFromPos" @accept="acceptSwap" @decline="declineSwap"/>
     <KickedModal v-if="showKicked" @confirm="router.push('/')"/>
-    <ChatModal v-if="showChat" @close="showChat = false" />
+    <ChatModal v-if="showChat":messages="chatMessages" :myId="getCookie('participantId')" :ws="ws" @close="showChat = false"/>
     <SwapDeclinedModal v-if="showSwapDeclined":fromName="swapDeclinedName" @confirm="showSwapDeclined = false"/>
   </div>
 </template>
@@ -120,6 +120,8 @@ const skipFeature = ref(false)
 const skipDurationMinutes = ref(10)
 const skipCooldown = ref(false)
 
+const chatMessages = ref([])
+
 
 let ws = null
 onMounted(async () => {
@@ -137,8 +139,10 @@ function connectWS() {
   const queueId = route.params.id
   if (!queueId) return
   const participantId = getCookie('participantId') ?? ''
+  const myParticipant = participants.value.find(p => p.id === participantId)
+  const senderName = encodeURIComponent(myParticipant?.name ?? 'Участник')
   ws = new WebSocket(
-    `ws://localhost:8080/api/ws/queue/${queueId}?participantId=${participantId}`
+    `ws://localhost:8080/api/ws/queue/${queueId}?participantId=${participantId}&senderName=${senderName}`
   )
 
   ws.onmessage = (event) => {
@@ -155,8 +159,17 @@ function connectWS() {
       // Нам отказали
       swapDeclinedName.value = msg.fromName
       showSwapDeclined.value = true
+    } else if (msg.type === 'chat_message') {
+      chatMessages.value.push({
+      senderId: msg.senderId,
+      senderName: msg.senderName,
+      text: msg.text,})
+      if (chatMessages.value.length > 20) {
+        chatMessages.value.shift()
+      }
     }
   }
+
 
   ws.onclose = () => {
     const queueId = route.params.id
