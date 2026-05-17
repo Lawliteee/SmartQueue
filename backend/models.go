@@ -3,9 +3,12 @@ package main
 import "time"
 
 type Participant struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Priority int    `json:"priority"`
+	ID      	  	 string 	`json:"id"`
+	Name             string 	`json:"name"`
+	Priority 		 int    	`json:"priority"`
+	Skipped          bool       `json:"skipped"`
+    SkipUntil        *time.Time `json:"skipUntil,omitempty"`
+    OriginalPosition int        `json:"originalPosition"`
 }
 
 type Queue struct {
@@ -17,8 +20,9 @@ type Queue struct {
 	HasPriority         bool          `json:"hasPriority"`
 	PriorityCount       int           `json:"priorityCount"`
 	InitialPriority     int           `json:"initialPriority"`
-	AnonymousChat       bool          `json:"anonymousChat"`
-	SystemNotifications bool          `json:"systemNotifications"`
+	SkipFeature   		bool 		  `json:"skipFeature"`
+	SkipDuration  		int  		  `json:"skipDuration"`
+	ImFreeFeature 		bool 		  `json:"imFreeFeature"`
 	SwapPositions       bool          `json:"swapPositions"`
 	Admins              []string      `json:"admins"`
 	CreatedAt           time.Time     `json:"createdAt"`
@@ -36,8 +40,9 @@ type CreateQueueRequest struct {
 	HasPriority         bool     `json:"hasPriority"`
 	PriorityCount       int      `json:"priorityCount"`
 	InitialPriority     int      `json:"initialPriority"`
-	AnonymousChat       bool     `json:"anonymousChat"`
-	SystemNotifications bool     `json:"systemNotifications"`
+	SkipFeature  		bool     `json:"skipFeature"`
+	SkipDuration 		int  	 `json:"skipDuration"`
+	ImFreeFeature 		bool 	 `json:"imFreeFeature"`
 	SwapPositions       bool     `json:"swapPositions"`
 	Admins              []string `json:"admins"`
 }

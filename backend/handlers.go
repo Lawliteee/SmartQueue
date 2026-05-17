@@ -26,6 +26,7 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	queueID := vars["id"]
 	participantID := r.URL.Query().Get("participantId")
+    senderName := r.URL.Query().Get("senderName")
 
 	// Проверяем существование очереди
 	if _, ok := h.store.Get(queueID); !ok {
@@ -40,15 +41,43 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	h.hub.Subscribe(queueID, participantID, conn)
-	defer h.hub.Unsubscribe(queueID, participantID, conn)
-	
-	// Ожидаем закрытия соединения (пока не обрабатываем входящие сообщения)
-	for {
-		if _, _, err := conn.ReadMessage(); err != nil {
-			break
-		}
-	}
+    h.hub.Subscribe(queueID, participantID, conn)
+    defer h.hub.Unsubscribe(queueID, participantID, conn)
+
+    for {
+        _, msgBytes, err := conn.ReadMessage()
+        if err != nil {
+            break
+        }
+
+        var incoming struct {
+            Type string `json:"type"`
+            Text string `json:"text"`
+        }
+        if err := json.Unmarshal(msgBytes, &incoming); err != nil {
+            continue
+        }
+
+        if incoming.Type == "chat_message" && len(incoming.Text) > 0 {
+            text := incoming.Text
+            if len(text) > 100 {
+                text = text[:100]
+            }
+            msg := map[string]interface{}{
+        		"type":       "chat_message",
+        		"senderName": senderName,
+        		"senderId":   participantID,
+        		"text":       text,
+    		}
+    		// Сохраняем в историю
+    		h.hub.AddToHistory(queueID, ChatMessage{
+        		SenderID:   participantID,
+        		SenderName: senderName,
+        		Text:       text,
+    		})
+    		h.hub.Broadcast(queueID, msg)
+        }
+    }
 }
 
 // POST /api/queues – создание очереди
@@ -70,8 +99,9 @@ func (h *Handler) CreateQueue(w http.ResponseWriter, r *http.Request) {
 		HasPriority:         req.HasPriority,
 		PriorityCount:       req.PriorityCount,
 		InitialPriority:     req.InitialPriority,
-		AnonymousChat:       req.AnonymousChat,
-		SystemNotifications: req.SystemNotifications,
+		SkipFeature:  		 req.SkipFeature,
+		SkipDuration: 		 req.SkipDuration,
+		ImFreeFeature: 		 req.ImFreeFeature,
 		SwapPositions:       req.SwapPositions,
 		Admins:              req.Admins,
 		CreatedAt:           time.Now(),
@@ -166,6 +196,7 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 	type QueueInfo struct {
 		ID                 string        `json:"id"`
 		Name               string        `json:"name"`
+		Description        string        `json:"description"`
 		StartTime          string        `json:"startTime"`
 		CurrentNumber      int           `json:"currentNumber"`
 		Participants       []Participant `json:"participants"`
@@ -175,6 +206,9 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 		Finished           bool          `json:"finished"`
 		CurrentParticipant *Participant  `json:"currentParticipant"`
 		MaxParticipants    int           `json:"maxParticipants"`
+		ImFreeFeature 	   bool          `json:"imFreeFeature"`
+		SkipFeature  	   bool 		 `json:"skipFeature"`
+		SkipDuration 	   int  		 `json:"skipDuration"`
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -182,6 +216,7 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(QueueInfo{
 		ID:                 queue.ID,
 		Name:               queue.Name,
+		Description:        queue.Description,
 		StartTime:          queue.StartTime,
 		CurrentNumber:      queue.CurrentNumber,
 		Participants:       queue.Participants,
@@ -191,6 +226,9 @@ func (h *Handler) GetQueue(w http.ResponseWriter, r *http.Request) {
 		Finished:           queue.Finished,
 		CurrentParticipant: currentParticipant,
 		MaxParticipants:    queue.MaxParticipants,
+		ImFreeFeature: 		queue.ImFreeFeature,
+		SkipFeature:  		queue.SkipFeature,
+		SkipDuration: 		queue.SkipDuration,	
 	})
 }
 
@@ -339,6 +377,17 @@ func (h *Handler) SwapRequest(w http.ResponseWriter, r *http.Request) {
         ToID:     req.ToID,
     }
     h.swaps.Add(offer)
+	
+	// Находим позицию fromID в очереди
+	queue, _ := h.store.Get(queueID)
+	fromPos := 0
+	for i, p := range queue.Participants {
+    if p.ID == req.FromID {
+			fromPos = i + 1
+			break
+		}
+	}
+
 
     // Шлём уведомление только целевому участнику через WS
     h.hub.BroadcastTo(queueID, req.ToID, map[string]interface{}{
@@ -346,6 +395,7 @@ func (h *Handler) SwapRequest(w http.ResponseWriter, r *http.Request) {
         "swapId":   offer.ID,
         "fromId":   req.FromID,
         "fromName": req.FromName,
+		"fromPos":  fromPos,
     })
 
     w.WriteHeader(http.StatusOK)
@@ -390,5 +440,94 @@ func (h *Handler) SwapRespond(w http.ResponseWriter, r *http.Request) {
         })
     }
 
+    w.WriteHeader(http.StatusOK)
+}
+
+// POST /api/queues/{id}/im-free – участник освободился, вызываем следующего
+func (h *Handler) ImFree(w http.ResponseWriter, r *http.Request) {
+    queueID := mux.Vars(r)["id"]
+
+    queue, ok := h.store.Get(queueID)
+    if !ok {
+        http.Error(w, "Queue not found", http.StatusNotFound)
+        return
+    }
+
+    // Если есть следующие — вызываем
+    if len(queue.Participants) > 0 {
+        h.store.ShiftParticipant(queueID)
+    } else {
+        // Очередь пуста — просто сбрасываем текущего
+        h.store.ClearCurrentParticipant(queueID)
+    }
+
+    if q, ok := h.store.Get(queueID); ok {
+        h.hub.Broadcast(queueID, map[string]interface{}{
+            "type": "queue_update",
+            "data": q,
+        })
+    }
+
+    w.WriteHeader(http.StatusOK)
+}
+
+// POST /api/queues/{id}/skip
+func (h *Handler) SkipMe(w http.ResponseWriter, r *http.Request) {
+    queueID := mux.Vars(r)["id"]
+
+    var body struct {
+        ParticipantID string `json:"participantId"`
+    }
+    if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.ParticipantID == "" {
+        http.Error(w, "Invalid body", http.StatusBadRequest)
+        return
+    }
+
+    queue, ok := h.store.Get(queueID)
+    if !ok {
+        http.Error(w, "Queue not found", http.StatusNotFound)
+        return
+    }
+
+    duration := time.Duration(queue.SkipDuration) * time.Minute
+    if err := h.store.SkipParticipant(queueID, body.ParticipantID, duration); err != nil {
+        http.Error(w, "Skip failed", http.StatusInternalServerError)
+        return
+    }
+
+    h.store.ExpireSkips(queueID)
+
+    if q, ok := h.store.Get(queueID); ok {
+        h.hub.Broadcast(queueID, map[string]interface{}{
+            "type": "queue_update",
+            "data": q,
+        })
+    }
+    w.WriteHeader(http.StatusOK)
+}
+
+// POST /api/queues/{id}/return
+func (h *Handler) ReturnMe(w http.ResponseWriter, r *http.Request) {
+    queueID := mux.Vars(r)["id"]
+
+    var body struct {
+        ParticipantID string `json:"participantId"`
+    }
+    if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.ParticipantID == "" {
+        http.Error(w, "Invalid body", http.StatusBadRequest)
+        return
+    }
+
+    if err := h.store.ReturnParticipant(queueID, body.ParticipantID); err != nil {
+        http.Error(w, "Return failed", http.StatusInternalServerError)
+        return
+    }
+
+    if q, ok := h.store.Get(queueID); ok {
+        h.hub.Broadcast(queueID, map[string]interface{}{
+            "type": "queue_update",
+            "data": q,
+        })
+    }
     w.WriteHeader(http.StatusOK)
 }

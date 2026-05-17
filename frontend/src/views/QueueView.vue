@@ -10,9 +10,15 @@
       <img src="/icons/burger.png" alt="меню" width="22" height="22" />
     </button>
 
-    <!-- Заголовок и осн инфа -->
+    <!-- Заголовок и осн. инфа -->
     <section class="queue-info">
+      <div class="queue-title-wrapper">
       <h2 class="queue-title">{{ queueTitle }}</h2>
+      <div v-show="queueDescription" class="info-icon" data-tooltip="" @mouseenter="showTooltip = true" @mouseleave="showTooltip = false">
+        i
+      <div v-if="showTooltip" class="tooltip">{{ queueDescription }}</div>
+    </div>
+  </div>
     </section>
     <section class="content">
       <p v-if="waitTime === -1" class="your-turn">Ваша очередь!</p>
@@ -27,10 +33,29 @@
       <p v-if="currentNumber > 0" class="ahead-count">Перед вами: {{ peopleAhead }} чел.</p>
       <p v-else class="ahead-count" style="visibility: hidden">placeholder</p>
       <div class="btn-row">
-        <button class="btn-skip" @click="skipMe" :disabled="waitTime === -1">
-          Пропустить меня
+
+        <!-- Кнопка пропуска меня -->
+        <template v-if="skipFeature">
+          <button v-if="!isSkipped && waitTime !== -1" class="btn-skip" @click="skipMe":disabled="currentNumber === 0 || skipCooldown">
+            Пропустить меня
+          </button>
+          <button v-else-if="isSkipped" class="btn-return"@click="returnMe">
+            Вернуться ({{ skipTimeLeft }}с)
+           </button>
+        </template>
+
+        <!-- Обычная кнопка -->
+        <button v-if="waitTime !== -1" class="btn-leave" @click="leaveQueue">
+          Покинуть очередь
         </button>
-        <button class="btn-leave" :disabled="waitTime === -1" :class="{ 'btn-leave--disabled': waitTime === -1 }" @click="leaveQueue">
+
+        <!-- Кнопка для вызванного -->
+        <button v-else-if="imFreeFeature" class="btn-leave" @click="imFree">
+          Я освободился
+        </button>
+
+        <!-- Заблокированная версия -->
+        <button v-else class="btn-leave btn-leave--disabled" disabled>
           Покинуть очередь
         </button>
       </div>
@@ -38,11 +63,11 @@
 
     <!-- Модалки -->
     <QueueFinishedModal v-if="showFinished" @confirm="onFinishedConfirm" />
-    <ParticipantsModal v-if="showParticipants":participants="participants":currentParticipant="currentParticipant"
-      :myId="getCookie('participantId')" @close="showParticipants = false" @swap-requested="onSwapRequested":queueStarted="currentNumber > 0"/>
-    <SwapRequestModal v-if="showSwapRequest":fromName="swapFromName" @accept="acceptSwap" @decline="declineSwap"/>
+    <ParticipantsModal v-if="showParticipants":participants="participants":currentParticipant="currentParticipant":myId="getCookie('participantId')"
+      :swapEnabled="swapEnabled" @close="showParticipants = false" @swap-requested="onSwapRequested":queueStarted="currentNumber > 0"/>
+    <SwapRequestModal v-if="showSwapRequest":fromName="swapFromName":fromPos="swapFromPos" @accept="acceptSwap" @decline="declineSwap"/>
     <KickedModal v-if="showKicked" @confirm="router.push('/')"/>
-    <ChatModal v-if="showChat" @close="showChat = false" />
+    <ChatModal v-if="showChat":messages="chatMessages" :myId="getCookie('participantId')" :ws="ws" @close="showChat = false"/>
     <SwapDeclinedModal v-if="showSwapDeclined":fromName="swapDeclinedName" @confirm="showSwapDeclined = false"/>
   </div>
 </template>
@@ -62,6 +87,7 @@ import axios from 'axios'
 const showFinished = ref(false)
 const showKicked = ref(false)
 const showChat = ref(false)
+const imFreeFeature = ref(false)
 
 const showParticipants = ref(false)
 const participants = ref([])
@@ -71,6 +97,7 @@ const router = useRouter()
 
 const showSwapRequest = ref(false)
 const swapFromName = ref('')
+const swapFromPos = ref(0)
 
 const showSwapDeclined = ref(false)
 const swapDeclinedName = ref('')
@@ -81,6 +108,20 @@ const peopleAhead = ref(0)
 const currentNumber = ref(0)
 const currentParticipant = ref(null)
 const pendingSwapId = ref(null)
+const swapEnabled = ref(false)
+const queueDescription = ref('')
+const showTooltip = ref(false)
+
+const isSkipped = ref(false)
+const skipUntil = ref(null)
+const skipTimeLeft = ref(0)
+let skipTimer = null
+const skipFeature = ref(false)
+const skipDurationMinutes = ref(10)
+const skipCooldown = ref(false)
+
+const chatMessages = ref([])
+
 
 let ws = null
 onMounted(async () => {
@@ -91,13 +132,17 @@ onMounted(async () => {
 onUnmounted(() => {
   ws?.close()
   window.removeEventListener('keydown', onKeydown)
+  clearInterval(skipTimer)
 })
 
 function connectWS() {
   const queueId = route.params.id
+  if (!queueId) return
   const participantId = getCookie('participantId') ?? ''
+  const myParticipant = participants.value.find(p => p.id === participantId)
+  const senderName = encodeURIComponent(myParticipant?.name ?? 'Участник')
   ws = new WebSocket(
-    `ws://localhost:8080/api/ws/queue/${queueId}?participantId=${participantId}`
+    `ws://localhost:8080/api/ws/queue/${queueId}?participantId=${participantId}&senderName=${senderName}`
   )
 
   ws.onmessage = (event) => {
@@ -108,23 +153,41 @@ function connectWS() {
       // Пришло предложение обмена
       pendingSwapId.value = msg.swapId
       swapFromName.value = msg.fromName
+      swapFromPos.value = msg.fromPos
       showSwapRequest.value = true
     } else if (msg.type === 'swap_declined') {
       // Нам отказали
       swapDeclinedName.value = msg.fromName
       showSwapDeclined.value = true
+    } else if (msg.type === 'chat_message') {
+      chatMessages.value.push({
+      senderId: msg.senderId,
+      senderName: msg.senderName,
+      text: msg.text,})
+      if (chatMessages.value.length > 20) {
+        chatMessages.value.shift()
+      }
+    } else if (msg.type === 'chat_history') {
+      chatMessages.value = msg.messages
     }
   }
 
-  ws.onclose = () => { setTimeout(connectWS, 2000) }
+
+  ws.onclose = () => {
+    const queueId = route.params.id
+    if (queueId) setTimeout(connectWS, 2000)
+  }
 }
 
 async function fetchQueue() {
   const queueId = route.params.id
+  console.log('queueId:', queueId)
   try {
     const response = await axios.get(`http://localhost:8080/api/queues/${queueId}`)
+    console.log('response:', response.data)
     handleUpdate(response.data)
   } catch (error) {
+    console.error('fetchQueue error:', error)
     router.push('/')
   }
 }
@@ -133,6 +196,12 @@ function handleUpdate(data) {
   participants.value = data.participants || []
   currentNumber.value = data.currentNumber ?? 0
   currentParticipant.value = data.currentParticipant ?? null
+  imFreeFeature.value = data.imFreeFeature ?? false
+  swapEnabled.value = data.swapPositions ?? false
+  queueDescription.value = data.description ?? ''
+  queueTitle.value = data.name
+  skipFeature.value = data.skipFeature ?? false
+  skipDurationMinutes.value = data.skipDuration ?? 10
 
   if (data.finished) {
     ws?.close()
@@ -160,13 +229,32 @@ function handleUpdate(data) {
     return
   }
 
-  queueTitle.value = data.name
   peopleAhead.value = myPos
   if (myPos === -1) {
     waitTime.value = null
   } else {
     waitTime.value = data.etAs?.[myPos] ?? null
   }
+
+  const myParticipant = data.participants.find(p => p.id === myId)
+  if (myParticipant) {
+    isSkipped.value = myParticipant.skipped
+    skipUntil.value = myParticipant.skipUntil ? new Date(myParticipant.skipUntil) : null
+    if (myParticipant.skipped && skipUntil.value) {
+      startSkipCountdown()
+    }
+  } else {
+    isSkipped.value = false
+    skipUntil.value = null
+  }
+}
+
+async function imFree() {
+  await axios.post(
+    `http://localhost:8080/api/queues/${route.params.id}/im-free`
+  )
+  removeCookie('participantId')
+  router.push('/')
 }
 
 async function leaveQueue() {
@@ -188,12 +276,6 @@ function openParticipants() {
 function onFinishedConfirm() {
   showFinished.value = false
   router.push('/')
-}
-
-// Пропускает место в очереди
-async function skipMe() {
-  // TODO
-  console.log('skip requested')
 }
 
 // Согласие на обмен местами
@@ -243,6 +325,41 @@ async function onSwapRequested(targetParticipant) {
     }
   )
   showParticipants.value = false
+}
+
+
+// Пропуск участника
+function startSkipCountdown() {
+  clearInterval(skipTimer)
+  skipTimer = setInterval(() => {
+    if (!skipUntil.value) { clearInterval(skipTimer); return }
+    const left = Math.max(0, Math.ceil((skipUntil.value - Date.now()) / 1000))
+    skipTimeLeft.value = left
+    if (left === 0) {
+      clearInterval(skipTimer)
+      isSkipped.value = false
+    }
+  }, 1000)
+}
+
+async function skipMe() {
+  const participantId = getCookie('participantId')
+  await axios.post(
+    `http://localhost:8080/api/queues/${route.params.id}/skip`,
+    { participantId }
+  )
+  skipCooldown.value = true
+  setTimeout(() => { skipCooldown.value = false }, 20_000) // Отключение кнопки на минуту
+}
+
+async function returnMe() {
+  const participantId = getCookie('participantId')
+  await axios.post(
+    `http://localhost:8080/api/queues/${route.params.id}/return`,
+    { participantId }
+  )
+  skipCooldown.value = true
+  setTimeout(() =>  { skipCooldown.value = false }, 20_000) // Отключение кнопки на минуту
 }
 </script>
 
@@ -389,4 +506,59 @@ async function onSwapRequested(targetParticipant) {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* Информация об очереди */
+.queue-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+
+.info-icon {
+  display: inline-flex;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-muted);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  position: relative;
+  user-select: none;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2c2c2c;
+  color: white;
+  font-size: 13px;
+  font-weight: 400;
+  padding: 8px 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+  z-index: 100;
+}
+
+/* Кнопка пропуска */
+.btn-return {
+  background: #de8900;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 16px 32px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  transition: background 0.2s;
+}
+.btn-return:hover { background: #c95e00; }
+
 </style>

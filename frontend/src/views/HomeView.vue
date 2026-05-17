@@ -122,7 +122,6 @@ h1 {
 
 .btn-primary1:hover, .btn-primary2:hover { background: var(--teal); }
 
-
 .btn-disabled {
   background: #6d6d6d;
   cursor: not-allowed;

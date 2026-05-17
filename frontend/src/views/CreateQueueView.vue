@@ -8,7 +8,7 @@
       <div class="form-row first-row">
       <label class="form-label" for="queueName">Название очереди</label>
         <div class="form-control">
-          <input id="queueName" type="text" class="form-input" v-model="queueName" />
+          <input id="queueName" type="text" class="form-input" v-model="queueName"/>
         </div>
       </div>
 
@@ -25,12 +25,16 @@
         <div class="inline-fields">
           <div class="inline-field">
             <label class="inline-label">Время начала</label>
-            <input type="time" class="form-input select-sm" v-model="startTime" />
+            <input type="time" class="form-input select-small" v-model="startTime" />
           </div>
           <div class="inline-field">
             <label class="inline-label">Макс. участников</label>
-            <input type="text" class="form-input input-sm" v-model="maxParticipants" />
+            <input type="text" class="form-input input-small" v-model="maxParticipants" />
           </div>
+          <label class="checkbox-item">
+            <input type="checkbox" v-model="swapPositions" />
+            <span>Обмен позициями</span>
+          </label>
         </div>
       </div>
 
@@ -42,28 +46,30 @@
             <span>Приоритеты</span>
           </label>
           <label class="inline-label ml">Количество приоритетов</label>
-          <input type="text" class="form-input input-sm" v-model="priorityCount" />
+          <input type="text" class="form-input input-small" v-model="priorityCount" />
           <label class="inline-label ml">Начальный приоритет</label>
-          <input type="text" class="form-input input-sm" v-model="initialPriority" />
+          <input type="text" class="form-input input-small" v-model="initialPriority" />
         </div>
       </div>
 
-      <!-- Ненужная фигня -->
+      <!-- Уже не Ненужная фигня -->
+
       <div class="form-row">
         <div class="checkbox-row">
           <label class="checkbox-item">
-            <input type="checkbox" v-model="anonymousChat" />
-            <span>Анонимный чат</span>
+            <input type="checkbox" v-model="skipFeature" />
+            <span>Функция "Пропустить меня"</span>
           </label>
+          <div class="inline-field">
+            <input type="number" class="form-input new-input-small" v-model="skipDuration" :disabled="!skipFeature" min="1" max="99"/>
+            <label class="inline-label">мин.</label>
+          </div>
           <label class="checkbox-item">
-            <input type="checkbox" v-model="systemNotifications" />
-            <span>Системные уведомления</span>
+            <input type="checkbox" v-model="imFreeFeature" />
+            <span>Функция "Я освободился"</span>
           </label>
-          <label class="checkbox-item">
-            <input type="checkbox" v-model="swapPositions" />
-            <span>Обмен позициями</span> <!-- TODO -->
-          </label>
-          <span class="info-icon" title="Участники могут меняться местами в очереди">i</span>
+
+          <span class="info-icon" title="Пропустить меня - участник временно становится в конец очереди; Я освободился - участники могут без администратора двигать очередь">i</span>
         </div>
       </div>
 
@@ -112,8 +118,9 @@ const maxParticipants = ref('')
 const hasPriority = ref(false)
 const priorityCount = ref('')
 const initialPriority = ref('')
-const anonymousChat = ref(false)
-const systemNotifications = ref(false)
+const skipFeature = ref(false)
+const skipDuration = ref(10)
+const imFreeFeature = ref(false)
 const swapPositions = ref(false)
 const adminInput = ref('')
 const admins = ref([])
@@ -139,8 +146,9 @@ const createQueue = async () => {
       hasPriority: hasPriority.value,
       priorityCount: parseInt(priorityCount.value) || 0,
       initialPriority: parseInt(initialPriority.value) || 0,
-      anonymousChat: anonymousChat.value,
-      systemNotifications: systemNotifications.value,
+      skipFeature: skipFeature.value,
+      skipDuration: parseInt(skipDuration.value) || 10,
+      imFreeFeature: imFreeFeature.value,
       swapPositions: swapPositions.value,
       admins: admins.value
     }
@@ -182,7 +190,7 @@ h1 {
   border-radius: 18px;
   padding: 6px 32px;
   width: 100%;
-  max-width: 700px;
+  max-width: 720px;
 }
 
 .form-row {
@@ -253,14 +261,27 @@ h1 {
   color: var(--text);
 }
 
-.select-sm {
+.new-inline-label {
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.select-small {
   width: auto;
   cursor: pointer;
   padding: 9px 10px;
 }
 
-.input-sm {
+.input-small {
   width: 70px;
+}
+
+.new-input-small {
+  width: 60px;
+  padding-right: 0px;
+  margin-right: 0px;
 }
 
 .ml {
@@ -398,6 +419,11 @@ input[type="checkbox"] {
 }
 
 .disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.form-input:disabled {
   opacity: 0.5;
   pointer-events: none;
 }

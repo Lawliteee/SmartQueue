@@ -6,20 +6,14 @@
         <button class="btn-close" @click="$emit('close')">Х</button>
       </div>
       <div class="participants-list">
-        <div
-          v-for="(p, idx) in displayedParticipants"
-          :key="p.id"
-          class="participant-row"
-          :class="{ 'participant-row--first': idx === 0 }"
-        >
+        <div v-for="(p, idx) in displayedParticipants":key="p.id" class="participant-row"
+        :class="{'participant-row--first': idx === 0,'participant-row--skipped': p.skipped}">
           <span class="p-number">{{ idx + 1 }}.</span>
           <span class="p-name">{{ p.name }}</span>
-          <button
-            v-if="p.id !== myId && !(queueStarted && idx === 0)"
-            class="btn-swap"
-            @click="requestSwap(p)"
-            title="Предложить обмен"
-          >
+          <span v-if="p.skipped && p.originalPosition" class="p-return-pos">
+            (бывш. поз. {{ p.originalPosition  + 1}})
+          </span>
+          <button v-if="canSwapWith(p, idx)" class="btn-swap" @click="requestSwap(p)" title="Предложить обмен">
             <img src="/icons/swap.png" alt="обмен" width="16" height="16" />
           </button>
         </div>
@@ -37,8 +31,22 @@ const props = defineProps({
   participants: { type: Array, default: () => [] },
   currentParticipant: { type: Object, default: null },
   myId: { type: String, default: null },
-  queueStarted: { type: Boolean, default: false }
+  queueStarted: { type: Boolean, default: false },
+  swapEnabled: { type: Boolean, default: false }
 })
+
+const myId = computed(() => props.myId)
+const amICurrentlyServed = computed(() =>
+  props.currentParticipant !== null && props.myId === props.currentParticipant?.id
+)
+
+function canSwapWith(p, idx) {
+  if (!props.swapEnabled) return false
+  if (p.id === props.myId) return false
+  if (amICurrentlyServed.value) return false
+  if (props.queueStarted && p.id === props.currentParticipant?.id) return false
+  return true
+}
 
 const displayedParticipants = computed(() => {
   if (!props.currentParticipant) return props.participants
@@ -162,6 +170,8 @@ h3 {
   }
 }
 
+.participant-row--skipped .p-name, .participant-row--skipped .p-number { opacity: 0.5; }
+
 /* Обмен местами */
 .btn-swap {
   margin-left: auto;
@@ -178,5 +188,12 @@ h3 {
 
 .btn-swap:hover {
   opacity: 1;
+}
+
+/* Позиция возврата */
+.p-return-pos {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: 4px;
 }
 </style>

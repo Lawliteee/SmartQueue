@@ -8,10 +8,8 @@
       </div>
       <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
       <button
-        class = "modal-btn"
-        :disabled = "!canSubmit || loading"
-        :class = "{ 'modal-btn--disabled': !canSubmit || loading }"
-        @click = "submitQueue">
+        class = "modal-btn" :disabled = "!canSubmit || loading"
+        :class = "{ 'modal-btn--disabled': !canSubmit || loading }" @click = "submitQueue">
         Вступить
       </button>
     </div>
@@ -54,6 +52,13 @@ async function submitQueue() {
 
   loading.value  = true
   errorMsg.value = ''
+
+  const name = userName.value.trim()
+  if (name.toLowerCase() === 'администратор') {
+    errorMsg.value = 'Это имя зарезервировано'
+    loading.value = false
+    return
+  }
 
 try {
   // Сначала проверяем статус очереди
