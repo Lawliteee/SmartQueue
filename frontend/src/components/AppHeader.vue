@@ -17,7 +17,11 @@
         <button class="avatar-btn" @click="accountOpen = !accountOpen">
           <img src="/icons/avatar.png" alt="аккаунт" width="36" height="36" />
         </button>
-        <AccountModal v-if="accountOpen":user="currentUser" @close="accountOpen = false" @logout="logout"/>
+        <AccountModal v-if="accountOpen" :user="currentUser" :adminQueues="adminQueues"
+          :participantQueues="participantQueues" @close="accountOpen = false" @logout="logout"
+          @go-to-admin="(id) => { accountOpen = false; router.push(`/admin/${id}`) }"
+          @go-to-queue="(id) => { accountOpen = false; router.push(`/queue/${id}`) }"
+        />
       </div>
 
     </nav>
@@ -42,10 +46,22 @@ import { clearUser } from '../utils/auth.js'
 import { useCurrentUser } from '../utils/useCurrentUser.js'
 const currentUser = useCurrentUser()
 
+import { useRouter } from 'vue-router'
+const router = useRouter()
+
 const loginOpen = ref(false)
 const registerOpen = ref(false)
 const accountOpen = ref(false)
 const avatarRef = ref(null)
+
+
+// Заглушки
+const adminQueues = ref([
+  { id: 'stub-1', name: 'Тестовая очередь 1' },
+])
+const participantQueues = ref([
+  { id: 'stub-2', name: 'Очередь регистратуры' },
+])
 
 onMounted(() => {
   document.addEventListener('click', onClickOutside) // Подписываемся на клики
