@@ -13,8 +13,7 @@
           <span v-if="p.skipped && p.originalPosition" class="p-return-pos">
             (бывш. поз. {{ p.originalPosition  + 1}})
           </span>
-          <button v-if="swapEnabled && p.id !== myId && !(p.id === currentParticipant?.id) && myId !== currentParticipant?.id"
-            class="btn-swap" @click="requestSwap(p)" title="Предложить обмен">
+          <button v-if="canSwapWith(p, idx)" class="btn-swap" @click="requestSwap(p)" title="Предложить обмен">
             <img src="/icons/swap.png" alt="обмен" width="16" height="16" />
           </button>
         </div>
@@ -35,6 +34,19 @@ const props = defineProps({
   queueStarted: { type: Boolean, default: false },
   swapEnabled: { type: Boolean, default: false }
 })
+
+const myId = computed(() => props.myId)
+const amICurrentlyServed = computed(() =>
+  props.currentParticipant !== null && props.myId === props.currentParticipant?.id
+)
+
+function canSwapWith(p, idx) {
+  if (!props.swapEnabled) return false
+  if (p.id === props.myId) return false
+  if (amICurrentlyServed.value) return false
+  if (props.queueStarted && p.id === props.currentParticipant?.id) return false
+  return true
+}
 
 const displayedParticipants = computed(() => {
   if (!props.currentParticipant) return props.participants
