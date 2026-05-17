@@ -63,12 +63,19 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
             if len(text) > 100 {
                 text = text[:100]
             }
-            h.hub.Broadcast(queueID, map[string]interface{}{
-                "type":        "chat_message",
-                "senderName":  senderName,
-                "senderId":    participantID,
-                "text":        text,
-            })
+            msg := map[string]interface{}{
+        		"type":       "chat_message",
+        		"senderName": senderName,
+        		"senderId":   participantID,
+        		"text":       text,
+    		}
+    		// Сохраняем в историю
+    		h.hub.AddToHistory(queueID, ChatMessage{
+        		SenderID:   participantID,
+        		SenderName: senderName,
+        		Text:       text,
+    		})
+    		h.hub.Broadcast(queueID, msg)
         }
     }
 }

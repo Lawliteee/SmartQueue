@@ -121,6 +121,8 @@ function connectWS() {
     } else if (msg.type === 'chat_message') {
       chatMessages.value.push({ senderId: msg.senderId, senderName: msg.senderName, text: msg.text,})
       if (chatMessages.value.length > 20) chatMessages.value.shift()
+    } else if (msg.type === 'chat_history') {
+      chatMessages.value = msg.messages
     }
   }
 

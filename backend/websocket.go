@@ -18,6 +18,7 @@ type Hub struct {
 	// rooms: queueID - множество активных соединений
 	rooms map[string]map[*websocket.Conn]bool
 	clients map[string]map[string]*websocket.Conn
+	history  map[string][]ChatMessage
 	mu    sync.RWMutex
 }
 
@@ -26,6 +27,7 @@ func NewHub() *Hub {
 	return &Hub{
 		rooms: make(map[string]map[*websocket.Conn]bool),
 		clients: make(map[string]map[string]*websocket.Conn),
+		history: make(map[string][]ChatMessage),
 	}
 }
 
@@ -41,6 +43,16 @@ func (h *Hub) Subscribe(queueID, participantID string, conn *websocket.Conn) {
 	if participantID != "" {
 		h.clients[queueID][participantID] = conn
 	}
+	// Отправляем историю новому подключению
+    if msgs, ok := h.history[queueID]; ok && len(msgs) > 0 {
+        data, err := json.Marshal(map[string]interface{}{
+            "type": "chat_history",
+            "messages": msgs,
+        })
+        if err == nil {
+            conn.WriteMessage(websocket.TextMessage, data)
+        }
+    }
 	log.Printf("WebSocket подключён к очереди %s (всего соединений: %d)", queueID, len(h.rooms[queueID]))
 }
 
@@ -92,4 +104,19 @@ func (h *Hub) BroadcastTo(queueID, participantID string, message interface{}) {
 			conn.Close()
 		}
 	}
+}
+
+type ChatMessage struct {
+    SenderID   string `json:"senderId"`
+    SenderName string `json:"senderName"`
+    Text       string `json:"text"`
+}
+
+func (h *Hub) AddToHistory(queueID string, msg ChatMessage) {
+    h.mu.Lock()
+    defer h.mu.Unlock()
+    h.history[queueID] = append(h.history[queueID], msg)
+    if len(h.history[queueID]) > 20 {
+        h.history[queueID] = h.history[queueID][len(h.history[queueID])-20:]
+    }
 }
