@@ -20,8 +20,7 @@
         <AccountModal v-if="accountOpen" :user="currentUser" :adminQueues="adminQueues"
           :participantQueues="participantQueues" @close="accountOpen = false" @logout="logout"
           @go-to-admin="(id) => { accountOpen = false; router.push(`/admin/${id}`) }"
-          @go-to-queue="(id) => { accountOpen = false; router.push(`/queue/${id}`) }"
-        />
+          @go-to-queue="goToQueue"/>
       </div>
 
     </nav>
@@ -45,6 +44,14 @@ import AccountModal from './AccountModal.vue'
 import { clearUser } from '../utils/auth.js'
 import { useCurrentUser } from '../utils/useCurrentUser.js'
 const currentUser = useCurrentUser()
+
+import { setCookie } from '../utils/cookies.js'
+
+function goToQueue(q) {
+  accountOpen.value = false
+  if (q.participantId) setCookie(`participantId_${q.id}`, q.participantId, 7)
+  router.push(`/queue/${q.id}`)
+}
 
 import { useRouter } from 'vue-router'
 const router = useRouter()

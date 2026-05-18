@@ -67,7 +67,7 @@
       :swapEnabled="swapEnabled" @close="showParticipants = false" @swap-requested="onSwapRequested":queueStarted="currentNumber > 0"/>
     <SwapRequestModal v-if="showSwapRequest":fromName="swapFromName":fromPos="swapFromPos" @accept="acceptSwap" @decline="declineSwap"/>
     <KickedModal v-if="showKicked" @confirm="router.push('/')"/>
-    <ChatModal v-if="showChat":messages="chatMessages" :myId="getCookie('participantId')" :ws="ws" @close="showChat = false"/>
+    <ChatModal v-if="showChat":messages="chatMessages" :myId="getCookie(`participantId_${route.params.id}`)" :ws="ws" @close="showChat = false"/>
     <SwapDeclinedModal v-if="showSwapDeclined":fromName="swapDeclinedName" @confirm="showSwapDeclined = false"/>
   </div>
 </template>
@@ -138,7 +138,7 @@ onUnmounted(() => {
 function connectWS() {
   const queueId = route.params.id
   if (!queueId) return
-  const participantId = getCookie('participantId') ?? ''
+  const participantId = getCookie(`participantId_${route.params.id}`) ?? ''
   const myParticipant = participants.value.find(p => p.id === participantId)
   const senderName = encodeURIComponent(myParticipant?.name ?? 'Участник')
   ws = new WebSocket(
@@ -209,7 +209,7 @@ function handleUpdate(data) {
     return
   }
 
-  const myId = getCookie('participantId')
+  const myId = getCookie(`participantId_${route.params.id}`)
   const cp = data.currentParticipant
 
   if (cp && cp.id === myId) {  // если нет в очереди значит выгнали
@@ -223,7 +223,7 @@ function handleUpdate(data) {
   const myPos = data.participants.findIndex(p => p.id === myId)
 
   if (myPos === -1) { // Если текущий вызванный - я
-    removeCookie('participantId')
+    removeCookie(`participantId_${route.params.id}`)
     ws?.close()
     showKicked.value = true
     return
@@ -253,17 +253,17 @@ async function imFree() {
   await axios.post(
     `http://localhost:8080/api/queues/${route.params.id}/im-free`
   )
-  removeCookie('participantId')
+  removeCookie(`participantId_${route.params.id}`)
   router.push('/')
 }
 
 async function leaveQueue() {
-  const participantId = getCookie('participantId')
+  const participantId = getCookie(`participantId_${route.params.id}`)
   if (participantId) {
     await axios.delete(
       `http://localhost:8080/api/queues/${route.params.id}/participants/${participantId}`,
     )
-    removeCookie('participantId')
+    removeCookie(`participantId_${route.params.id}`)
   }
   router.push('/')
 }
@@ -313,7 +313,7 @@ function onKeydown(e) {
 
 // Получение предложения об обмене
 async function onSwapRequested(targetParticipant) {
-  const myId = getCookie('participantId')
+  const myId = getCookie(`participantId_${route.params.id}`)
   const myName = participants.value.find(p => p.id === myId)?.name ?? ''
 
   await axios.post(
@@ -343,7 +343,7 @@ function startSkipCountdown() {
 }
 
 async function skipMe() {
-  const participantId = getCookie('participantId')
+  const participantId = getCookie(`participantId_${route.params.id}`)
   await axios.post(
     `http://localhost:8080/api/queues/${route.params.id}/skip`,
     { participantId }
@@ -353,7 +353,7 @@ async function skipMe() {
 }
 
 async function returnMe() {
-  const participantId = getCookie('participantId')
+  const participantId = getCookie(`participantId_${route.params.id}`)
   await axios.post(
     `http://localhost:8080/api/queues/${route.params.id}/return`,
     { participantId }

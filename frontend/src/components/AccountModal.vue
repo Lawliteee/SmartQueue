@@ -13,7 +13,7 @@
         </div>
       </div>
       <div v-if="participantQueues.length > 0" class="queue-list">
-        <div v-for="q in participantQueues" :key="q.id" class="queue-item" @click="$emit('go-to-queue', q.id)">
+        <div v-for="q in participantQueues" :key="q.id" class="queue-item" @click="$emit('go-to-queue', q)">
           {{ q.name }}
         </div>
       </div>

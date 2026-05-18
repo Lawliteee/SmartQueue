@@ -67,6 +67,7 @@ func contains(s, substr string) bool {
 type QueueRef struct {
     ID   string `json:"id"`
     Name string `json:"name"`
+	ParticipantID string `json:"participantId,omitempty"`
 }
 
 // Сохраняет связь пользователь → участник очереди
@@ -106,7 +107,7 @@ func (s *Store) GetUserQueues(userID string) (adminQueues []QueueRef, participan
 
     // Очереди где пользователь — участник (незавершённые)
     pRows, err := s.db.Query(`
-        SELECT q.id, q.name
+        SELECT q.id, q.name, upm.participant_id
         FROM queues q
         JOIN user_participant_map upm ON upm.queue_id = q.id
         WHERE upm.user_id = $1 AND q.finished = FALSE
@@ -118,7 +119,7 @@ func (s *Store) GetUserQueues(userID string) (adminQueues []QueueRef, participan
     defer pRows.Close()
     for pRows.Next() {
         var ref QueueRef
-        if pRows.Scan(&ref.ID, &ref.Name) == nil {
+        if pRows.Scan(&ref.ID, &ref.Name, &ref.ParticipantID) == nil {
             participantQueues = append(participantQueues, ref)
         }
     }
