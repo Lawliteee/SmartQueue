@@ -13,11 +13,13 @@
         </div>
       </div>
       <div v-if="participantQueues.length > 0" class="queue-list">
-        <div v-for="q in participantQueues" :key="q.id" class="queue-item" @click="$emit('go-to-queue', q.id)">
+        <div v-for="q in participantQueues" :key="q.id" class="queue-item" @click="$emit('go-to-queue', q)">
           {{ q.name }}
         </div>
       </div>
-      <p v-else class="queue-empty">Нет активных очередей</p>
+      <p v-if="adminQueues.length === 0 && participantQueues.length === 0" class="queue-empty">
+        Нет активных очередей
+      </p>
 
       <hr class="divider" />
       <button class="btn-logout" @click="$emit('logout')">Выйти из аккаунта</button>

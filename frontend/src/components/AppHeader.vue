@@ -14,14 +14,13 @@
 
       <!-- Залогинен -->
       <div v-else class="avatar-wrap" ref="avatarRef">
-        <button class="avatar-btn" @click="accountOpen = !accountOpen">
+        <button class="avatar-btn" @click="toggleAccount">
           <img src="/icons/avatar.png" alt="аккаунт" width="36" height="36" />
         </button>
         <AccountModal v-if="accountOpen" :user="currentUser" :adminQueues="adminQueues"
           :participantQueues="participantQueues" @close="accountOpen = false" @logout="logout"
           @go-to-admin="(id) => { accountOpen = false; router.push(`/admin/${id}`) }"
-          @go-to-queue="(id) => { accountOpen = false; router.push(`/queue/${id}`) }"
-        />
+          @go-to-queue="goToQueue"/>
       </div>
 
     </nav>
@@ -46,6 +45,14 @@ import { clearUser } from '../utils/auth.js'
 import { useCurrentUser } from '../utils/useCurrentUser.js'
 const currentUser = useCurrentUser()
 
+import { setCookie } from '../utils/cookies.js'
+
+function goToQueue(q) {
+  accountOpen.value = false
+  if (q.participantId) setCookie(`participantId_${q.id}`, q.participantId, 7)
+  router.push(`/queue/${q.id}`)
+}
+
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
@@ -55,16 +62,28 @@ const accountOpen = ref(false)
 const avatarRef = ref(null)
 
 
-// Заглушки
-const adminQueues = ref([
-  { id: 'stub-1', name: 'Тестовая очередь 1' },
-])
-const participantQueues = ref([
-  { id: 'stub-2', name: 'Очередь регистратуры' },
-])
+import { getToken } from '../utils/auth.js'
+
+const adminQueues = ref([])
+const participantQueues = ref([])
+
+async function fetchMyQueues() {
+  const token = getToken()
+  if (!token) return
+  try {
+    const res = await fetch('http://localhost:8080/api/admin/users/me/queues', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!res.ok) return
+    const data = await res.json()
+    adminQueues.value = data.adminQueues ?? []
+    participantQueues.value = data.participantQueues ?? []
+  } catch {}
+}
 
 onMounted(() => {
   document.addEventListener('click', onClickOutside) // Подписываемся на клики
+  if (currentUser.value) fetchMyQueues()
 })
 
 onBeforeUnmount(() => {
@@ -81,6 +100,7 @@ function onAuth(user) {
   currentUser.value = user
   loginOpen.value = false
   registerOpen.value = false
+  fetchMyQueues()
 }
 
 function logout() {
@@ -111,6 +131,11 @@ function switchToRegister() {
 function switchToLogin() {
   registerOpen.value = false
   loginOpen.value = true
+}
+
+function toggleAccount() {
+  accountOpen.value = !accountOpen.value
+  if (accountOpen.value) fetchMyQueues()
 }
 </script>
 

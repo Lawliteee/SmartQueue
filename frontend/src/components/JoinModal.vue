@@ -78,9 +78,11 @@ try {
 
   // Вступаем и сохраняем response
   const response = await axios.post(`http://localhost:8080/api/queues/${id}/join`, {
+    //name: userName.value.trim(),
     name: userName.value.trim(),
+    userId: getUser()?.id ?? '',
   })
-  setCookie('participantId', response.data.participantId, 7)
+  setCookie(`participantId_${id}`, response.data.participantId, 7)
   router.push(`/queue/${id}`)
   emit('close')
 } catch (err) {
