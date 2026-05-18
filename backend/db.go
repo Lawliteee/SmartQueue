@@ -36,6 +36,7 @@ func RunMigrations(db *sql.DB) {
 		"migrations/003_rename_system_notifications.sql",
 		"migrations/004_skip.sql",
 		"migrations/005_skip_feature.sql",
+		"migrations/006_user_queues.sql",
 	}
 
 	for _, path := range migrations {

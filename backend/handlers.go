@@ -261,6 +261,10 @@ func (h *Handler) JoinQueue(w http.ResponseWriter, r *http.Request) {
 
 	h.store.AddParticipant(id, participant)
 
+	if req.UserID != "" {
+    	h.store.SaveUserParticipant(req.UserID, id, participant.ID)
+	}
+
 	// Отправляем обновление всем, кто слушает WebSocket
 	if q, ok := h.store.Get(id); ok {
 		h.hub.Broadcast(id, map[string]interface{}{
@@ -530,4 +534,25 @@ func (h *Handler) ReturnMe(w http.ResponseWriter, r *http.Request) {
         })
     }
     w.WriteHeader(http.StatusOK)
+}
+
+// GET /api/users/me/queues – очереди текущего пользователя
+func (h *Handler) GetMyQueues(w http.ResponseWriter, r *http.Request) {
+    userID := UserIDFromContext(r.Context())
+    if userID == "" {
+        http.Error(w, "Unauthorized", http.StatusUnauthorized)
+        return
+    }
+
+    adminQueues, participantQueues, err := h.store.GetUserQueues(userID)
+    if err != nil {
+        http.Error(w, "Failed to fetch queues", http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]interface{}{
+        "adminQueues":       adminQueues,
+        "participantQueues": participantQueues,
+    })
 }

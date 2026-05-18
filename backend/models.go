@@ -49,6 +49,7 @@ type CreateQueueRequest struct {
 
 type JoinQueueRequest struct {
 	Name string `json:"name"`
+	UserID string `json:"userId"`
 }
 
 type QueueResponse struct {
