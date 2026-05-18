@@ -17,7 +17,9 @@
           {{ q.name }}
         </div>
       </div>
-      <p v-else class="queue-empty">Нет активных очередей</p>
+      <p v-if="adminQueues.length === 0 && participantQueues.length === 0" class="queue-empty">
+        Нет активных очередей
+      </p>
 
       <hr class="divider" />
       <button class="btn-logout" @click="$emit('logout')">Выйти из аккаунта</button>
