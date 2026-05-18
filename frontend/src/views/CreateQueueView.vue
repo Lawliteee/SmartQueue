@@ -154,7 +154,7 @@ const createQueue = async () => {
     }
 
     // Отправляем Post запрос
-    const response = await axios.post('http://localhost:8080/api/queues', payload)
+    const response = await axios.post('/api/queues', payload)
     const { link } = response.data
 
     createdQueueId.value = response.data.id // Модальное окно с идентификатором

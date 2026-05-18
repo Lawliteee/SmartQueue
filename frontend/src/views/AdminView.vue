@@ -103,7 +103,7 @@ onUnmounted(() => {
 function connectWS() {
   const queueId = route.params.id
   ws = new WebSocket(
-    `ws://localhost:8080/api/ws/queue/${queueId}?participantId=admin&senderName=${encodeURIComponent('Администратор')}`
+    `ws://135.106.155.97/api/ws/queue/${queueId}?participantId=admin&senderName=${encodeURIComponent('Администратор')}`
   )
 
   ws.onmessage = (event) => {
@@ -171,7 +171,7 @@ async function removeParticipant(participantId) {
   try {
     // Отправляем запрос на удаление
     await axios.delete(
-      `http://localhost:8080/api/queues/${route.params.id}/participants/${participantId}`
+      `/api/queues/${route.params.id}/participants/${participantId}`
     )
   } catch (error) {
     console.error('Ошибка при удалении участника:', error)

@@ -62,7 +62,7 @@ async function submitQueue() {
 
 try {
   // Сначала проверяем статус очереди
-  const check = await axios.get(`http://localhost:8080/api/queues/${id}`)
+  const check = await axios.get(`/api/queues/${id}`)
   if (check.data.finished) {
     errorMsg.value = 'Эта очередь уже завершена'
     loading.value = false
@@ -77,7 +77,7 @@ try {
   }
 
   // Вступаем и сохраняем response
-  const response = await axios.post(`http://localhost:8080/api/queues/${id}/join`, {
+  const response = await axios.post(`/api/queues/${id}/join`, {
     name: userName.value.trim(),
   })
   setCookie('participantId', response.data.participantId, 7)

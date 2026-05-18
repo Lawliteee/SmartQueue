@@ -2,7 +2,7 @@ import axios from 'axios'
 import { getToken } from './auth.js'
 
 const api = axios.create({ // создаем экземпляр axios
-  baseURL:'http://localhost:8080/api',
+  baseURL:'/api',
 })
 
 // Перехватывает запросы

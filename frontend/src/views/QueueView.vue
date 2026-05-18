@@ -142,7 +142,7 @@ function connectWS() {
   const myParticipant = participants.value.find(p => p.id === participantId)
   const senderName = encodeURIComponent(myParticipant?.name ?? 'Участник')
   ws = new WebSocket(
-    `ws://localhost:8080/api/ws/queue/${queueId}?participantId=${participantId}&senderName=${senderName}`
+    `ws://135.106.155.97/api/ws/queue/${queueId}?participantId=${participantId}&senderName=${senderName}`
   )
 
   ws.onmessage = (event) => {
@@ -183,7 +183,7 @@ async function fetchQueue() {
   const queueId = route.params.id
   console.log('queueId:', queueId)
   try {
-    const response = await axios.get(`http://localhost:8080/api/queues/${queueId}`)
+    const response = await axios.get(`/api/queues/${queueId}`)
     console.log('response:', response.data)
     handleUpdate(response.data)
   } catch (error) {
@@ -251,7 +251,7 @@ function handleUpdate(data) {
 
 async function imFree() {
   await axios.post(
-    `http://localhost:8080/api/queues/${route.params.id}/im-free`
+    `/api/queues/${route.params.id}/im-free`
   )
   removeCookie('participantId')
   router.push('/')
@@ -261,7 +261,7 @@ async function leaveQueue() {
   const participantId = getCookie('participantId')
   if (participantId) {
     await axios.delete(
-      `http://localhost:8080/api/queues/${route.params.id}/participants/${participantId}`,
+      `/api/queues/${route.params.id}/participants/${participantId}`,
     )
     removeCookie('participantId')
   }
@@ -280,7 +280,7 @@ function onFinishedConfirm() {
 
 // Согласие на обмен местами
 async function acceptSwap() {
-  await axios.post(`http://localhost:8080/api/queues/${route.params.id}/swap/respond`, {
+  await axios.post(`/api/queues/${route.params.id}/swap/respond`, {
     swapId: pendingSwapId.value,
     accept: true,
   })
@@ -290,7 +290,7 @@ async function acceptSwap() {
 
 // Отказ от обемена местами
 async function declineSwap() {
-  await axios.post(`http://localhost:8080/api/queues/${route.params.id}/swap/respond`, {
+  await axios.post(`/api/queues/${route.params.id}/swap/respond`, {
     swapId: pendingSwapId.value,
     accept: false,
   })
@@ -317,7 +317,7 @@ async function onSwapRequested(targetParticipant) {
   const myName = participants.value.find(p => p.id === myId)?.name ?? ''
 
   await axios.post(
-    `http://localhost:8080/api/queues/${route.params.id}/swap/request`,
+    `/api/queues/${route.params.id}/swap/request`,
     {
       fromId: myId,
       fromName: myName,
@@ -345,7 +345,7 @@ function startSkipCountdown() {
 async function skipMe() {
   const participantId = getCookie('participantId')
   await axios.post(
-    `http://localhost:8080/api/queues/${route.params.id}/skip`,
+    `/api/queues/${route.params.id}/skip`,
     { participantId }
   )
   skipCooldown.value = true
@@ -355,7 +355,7 @@ async function skipMe() {
 async function returnMe() {
   const participantId = getCookie('participantId')
   await axios.post(
-    `http://localhost:8080/api/queues/${route.params.id}/return`,
+    `/api/queues/${route.params.id}/return`,
     { participantId }
   )
   skipCooldown.value = true
