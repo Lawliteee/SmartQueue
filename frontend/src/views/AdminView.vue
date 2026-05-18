@@ -110,6 +110,12 @@ function connectWS() {
     const msg = JSON.parse(event.data)
     if (msg.type === 'queue_update') {
       const data = msg.data
+
+      if (data.finished) {
+        router.push('/')
+        return
+      }
+
       queue.value = {
         id: data.id,
         name: data.name,
