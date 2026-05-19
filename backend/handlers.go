@@ -115,7 +115,7 @@ func (h *Handler) CreateQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	link := "http://135.106.155.97/queue/" + id
+	link := "http://smartqueue367.ru/queue/" + id
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

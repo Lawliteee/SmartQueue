@@ -46,7 +46,7 @@ func main() {
 	admin.HandleFunc("/users/me/queues", handler.GetMyQueues).Methods("GET")
 
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://135.106.155.97"},
+		AllowedOrigins:   []string{"http://smartqueue367.ru"},
 		AllowedMethods:   []string{"GET", "POST", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,

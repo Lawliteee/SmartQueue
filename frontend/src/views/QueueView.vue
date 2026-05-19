@@ -143,7 +143,7 @@ function connectWS() {
   const myParticipant = participants.value.find(p => p.id === participantId)
   const senderName = encodeURIComponent(myParticipant?.name ?? 'Участник')
   ws = new WebSocket(
-    `ws://135.106.155.97/api/ws/queue/${queueId}?participantId=${participantId}&senderName=${senderName}`
+    `ws://smartqueue367.ru/api/ws/queue/${queueId}?participantId=${participantId}&senderName=${senderName}`
   )
 
   ws.onmessage = (event) => {

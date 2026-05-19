@@ -103,7 +103,7 @@ onUnmounted(() => {
 function connectWS() {
   const queueId = route.params.id
   ws = new WebSocket(
-    `ws://135.106.155.97/api/ws/queue/${queueId}?participantId=admin&senderName=${encodeURIComponent('Администратор')}`
+    `ws://smartqueue367.ru/api/ws/queue/${queueId}?participantId=admin&senderName=${encodeURIComponent('Администратор')}`
   )
 
   ws.onmessage = (event) => {
