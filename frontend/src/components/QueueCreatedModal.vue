@@ -21,7 +21,12 @@ const copied = ref(false)
 
 // Копирует id очереди
 function copy() {
-  navigator.clipboard.writeText(props.queueId)
+  const el = document.createElement('textarea')
+  el.value = props.queueId
+  document.body.appendChild(el)
+  el.select()
+  document.execCommand('copy')
+  document.body.removeChild(el)
   copied.value = true
   setTimeout(() => { copied.value = false }, 1500)
 }
