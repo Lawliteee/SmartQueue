@@ -106,6 +106,7 @@ import QueueCreatedModal from '../components/QueueCreatedModal.vue'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { getUser } from '../utils/auth.js'
 
 const router = useRouter()
 
@@ -150,7 +151,7 @@ const createQueue = async () => {
       skipDuration: parseInt(skipDuration.value) || 10,
       imFreeFeature: imFreeFeature.value,
       swapPositions: swapPositions.value,
-      admins: admins.value
+      admins: [getUser()?.id, ...admins.value].filter(Boolean)
     }
 
     // Отправляем Post запрос

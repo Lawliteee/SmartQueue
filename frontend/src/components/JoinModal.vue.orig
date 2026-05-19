@@ -77,7 +77,12 @@ try {
   }
 
   // Вступаем и сохраняем response
+<<<<<<< HEAD
   const response = await axios.post(`/api/queues/${id}/join`, {
+=======
+  const response = await axios.post(`http://localhost:8080/api/queues/${id}/join`, {
+    //name: userName.value.trim(),
+>>>>>>> dev
     name: userName.value.trim(),
     userId: getUser()?.id ?? '',
   })

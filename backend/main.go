@@ -43,6 +43,7 @@ func main() {
 	admin.Use(AuthMiddleware)
 	admin.HandleFunc("/queues/{id}/next", handler.CallNext).Methods("POST")
 	admin.HandleFunc("/queues/{id}/finish", handler.FinishQueue).Methods("POST")
+	admin.HandleFunc("/users/me/queues", handler.GetMyQueues).Methods("GET")
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://135.106.155.97"},

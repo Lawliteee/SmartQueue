@@ -13,14 +13,16 @@
         </div>
       </div>
       <div v-if="participantQueues.length > 0" class="queue-list">
-        <div v-for="q in participantQueues" :key="q.id" class="queue-item" @click="$emit('go-to-queue', q.id)">
+        <div v-for="q in participantQueues" :key="q.id" class="queue-item" @click="$emit('go-to-queue', q)">
           {{ q.name }}
         </div>
       </div>
-      <p v-else class="queue-empty">Нет активных очередей</p>
+      <p v-if="adminQueues.length === 0 && participantQueues.length === 0" class="queue-empty">
+        Нет активных очередей
+      </p>
 
       <hr class="divider" />
-      <button class="btn-logout" @click="$emit('logout')">Выйти из аккаунта</button>
+      <button v-if="canLogout" class="btn-logout" @click="$emit('logout')">Выйти из аккаунта</button>
     </div>
   </div>
 </template>
@@ -30,6 +32,7 @@ defineProps({
   user: { type: Object, required: true },
   adminQueues: { type: Array, default: () => [] },
   participantQueues: { type: Array, default: () => [] },
+  canLogout: { type: Boolean, default: true },
 })
 defineEmits(['close', 'logout', 'go-to-admin', 'go-to-queue'])
 </script>

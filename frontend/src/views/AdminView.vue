@@ -110,6 +110,12 @@ function connectWS() {
     const msg = JSON.parse(event.data)
     if (msg.type === 'queue_update') {
       const data = msg.data
+
+      if (data.finished) {
+        router.push('/')
+        return
+      }
+
       queue.value = {
         id: data.id,
         name: data.name,
@@ -152,7 +158,13 @@ async function fetchQueue() {
 const copied = ref(false)
 function copyId() {
   if (queue.value.id) {
-    navigator.clipboard.writeText(queue.value.id)
+    if (!queue.value.id) return
+    const el = document.createElement('textarea')
+    el.value = queue.value.id
+    document.body.appendChild(el)
+    el.select()
+    document.execCommand('copy')
+    document.body.removeChild(el)
     copied.value = true
     setTimeout(() => { copied.value = false }, 1000)
   }

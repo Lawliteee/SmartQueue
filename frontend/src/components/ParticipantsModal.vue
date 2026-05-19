@@ -41,6 +41,7 @@ const amICurrentlyServed = computed(() =>
 )
 
 function canSwapWith(p, idx) {
+  if (!props.myId) return false
   if (!props.swapEnabled) return false
   if (p.id === props.myId) return false
   if (amICurrentlyServed.value) return false
