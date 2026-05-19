@@ -63,7 +63,7 @@
 
     <!-- Модалки -->
     <QueueFinishedModal v-if="showFinished" @confirm="onFinishedConfirm" />
-    <ParticipantsModal v-if="showParticipants":participants="participants":currentParticipant="currentParticipant":myId="getCookie(`participantId_${route.params.id}`)"
+    <ParticipantsModal v-if="showParticipants":participants="participants":currentParticipant="currentParticipant":myId="myParticipantId"
       :swapEnabled="swapEnabled" @close="showParticipants = false" @swap-requested="onSwapRequested":queueStarted="currentNumber > 0"/>
     <SwapRequestModal v-if="showSwapRequest":fromName="swapFromName":fromPos="swapFromPos" @accept="acceptSwap" @decline="declineSwap"/>
     <KickedModal v-if="showKicked" @confirm="router.push('/')"/>
@@ -80,7 +80,7 @@ import SwapRequestModal from '../components/SwapRequestModal.vue'
 import ChatModal from '../components/ChatModal.vue'
 import KickedModal from '../components/KickedModal.vue'
 import SwapDeclinedModal from '../components/SwapDeclinedModal.vue'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 
@@ -122,6 +122,7 @@ const skipCooldown = ref(false)
 
 const chatMessages = ref([])
 
+const myParticipantId = ref('')
 
 let ws = null
 onMounted(async () => {
@@ -193,6 +194,7 @@ async function fetchQueue() {
 }
 
 function handleUpdate(data) {
+  myParticipantId.value = getCookie(`participantId_${route.params.id}`) ?? ''
   participants.value = data.participants || []
   currentNumber.value = data.currentNumber ?? 0
   currentParticipant.value = data.currentParticipant ?? null
