@@ -22,7 +22,7 @@
       </p>
 
       <hr class="divider" />
-      <button class="btn-logout" @click="$emit('logout')">Выйти из аккаунта</button>
+      <button v-if="canLogout" class="btn-logout" @click="$emit('logout')">Выйти из аккаунта</button>
     </div>
   </div>
 </template>
@@ -32,6 +32,7 @@ defineProps({
   user: { type: Object, required: true },
   adminQueues: { type: Array, default: () => [] },
   participantQueues: { type: Array, default: () => [] },
+  canLogout: { type: Boolean, default: true },
 })
 defineEmits(['close', 'logout', 'go-to-admin', 'go-to-queue'])
 </script>
