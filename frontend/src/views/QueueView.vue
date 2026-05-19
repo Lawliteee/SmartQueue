@@ -63,7 +63,7 @@
 
     <!-- Модалки -->
     <QueueFinishedModal v-if="showFinished" @confirm="onFinishedConfirm" />
-    <ParticipantsModal v-if="showParticipants":participants="participants":currentParticipant="currentParticipant":myId="getCookie('participantId')"
+    <ParticipantsModal v-if="showParticipants":participants="participants":currentParticipant="currentParticipant":myId="getCookie(`participantId_${route.params.id}`)"
       :swapEnabled="swapEnabled" @close="showParticipants = false" @swap-requested="onSwapRequested":queueStarted="currentNumber > 0"/>
     <SwapRequestModal v-if="showSwapRequest":fromName="swapFromName":fromPos="swapFromPos" @accept="acceptSwap" @decline="declineSwap"/>
     <KickedModal v-if="showKicked" @confirm="router.push('/')"/>
