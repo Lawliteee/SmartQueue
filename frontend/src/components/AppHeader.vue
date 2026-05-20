@@ -67,6 +67,7 @@ const avatarRef = ref(null)
 
 
 import { getToken } from '../utils/auth.js'
+import api from '../utils/api.js'
 
 const adminQueues = ref([])
 const participantQueues = ref([])
@@ -75,11 +76,9 @@ async function fetchMyQueues() {
   const token = getToken()
   if (!token) return
   try {
-    const res = await fetch('http://localhost:8080/api/admin/users/me/queues', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    if (!res.ok) return
-    const data = await res.json()
+    const res = await api.get('/admin/users/me/queues')
+    //if (!res.ok) return
+    //const data = await res.json()
     adminQueues.value = data.adminQueues ?? []
     participantQueues.value = data.participantQueues ?? []
   } catch {}
